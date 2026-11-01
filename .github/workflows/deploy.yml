@@ -1,8 +1,10 @@
-name: Deploy no GitHub Pages
+name: Deploy no GitHub Pages (protótipo congelado)
+# O protótipo com dados simulados vive na branch `prototipo`. A main tem o front ligado à API,
+# que precisa do servidor e não roda em hospedagem estática.
 
 on:
   push:
-    branches: [main]
+    branches: [prototipo]
   workflow_dispatch:
 
 permissions:
