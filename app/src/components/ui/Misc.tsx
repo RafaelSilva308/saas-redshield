@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
+import { Button } from './Button'
 
 /** Cabeçalho de página: título condensado em caixa alta + subtítulo cinza + ações. */
 export function PageHeader({
@@ -110,6 +111,35 @@ export function EmptyState({
       <h3 className="rs-title text-lg text-rs-ink">{titulo}</h3>
       <p className="max-w-sm text-sm text-rs-gray-500">{mensagem}</p>
       {acao && <div className="mt-1">{acao}</div>}
+    </div>
+  )
+}
+
+/** Enquanto uma leitura da API não chega. O texto é lido por leitor de tela (role="status"). */
+export function Carregando({ texto = 'Carregando…' }: { texto?: string }) {
+  return (
+    <div role="status" className="flex items-center justify-center gap-3 px-6 py-14 text-sm text-rs-gray-500">
+      <span aria-hidden className="size-4 animate-spin rounded-full border-2 border-rs-gray-300 border-t-rs-blue-600" />
+      {texto}
+    </div>
+  )
+}
+
+/** Leitura da API que falhou: mensagem do servidor + botão para tentar de novo. */
+export function ErroCarga({ mensagem, aoTentarDeNovo }: { mensagem: string; aoTentarDeNovo?: () => void }) {
+  return (
+    <div role="alert">
+      <EmptyState
+        titulo="Não foi possível carregar"
+        mensagem={mensagem}
+        acao={
+          aoTentarDeNovo && (
+            <Button type="button" onClick={aoTentarDeNovo}>
+              Tentar de novo
+            </Button>
+          )
+        }
+      />
     </div>
   )
 }
