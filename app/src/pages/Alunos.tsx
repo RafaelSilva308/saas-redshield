@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Download, Pencil, Search, SlidersHorizontal, UserPlus, Users } from 'lucide-react'
-import { PageHeader, EmptyState, Tabs } from '@/components/ui/Misc'
+import { Carregando, PageHeader, EmptyState, ErroCarga, Tabs } from '@/components/ui/Misc'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Select } from '@/components/ui/Field'
 import { Badge, FaixaBadge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
-import { useStore } from '@/app/store'
+import { useAlunos } from '@/api/alunos'
+import { usePlanos } from '@/api/planos'
+import { mensagemDeErro } from '@/lib/api'
 import { FormularioAluno } from './alunos/FormularioAluno'
 import { FAIXAS, STATUS_ALUNO, STATUS_PAGAMENTO, dataCurta, idade } from '@/lib/format'
 import type { Aluno, Faixa, StatusAluno } from '@/types'
@@ -16,13 +18,16 @@ import { cn } from '@/lib/cn'
 type Aba = 'todos' | StatusAluno | 'inadimplentes'
 
 export function Alunos() {
-  const { alunos, planos } = useStore()
+  const consultaAlunos = useAlunos()
+  const planos = usePlanos().data ?? []
+  const alunos = useMemo(() => consultaAlunos.data ?? [], [consultaAlunos.data])
   const [params, setParams] = useSearchParams()
 
   const [aba, setAba] = useState<Aba>('todos')
   const [busca, setBusca] = useState('')
   const [faixa, setFaixa] = useState<'todas' | Faixa>('todas')
-  const [plano, setPlano] = useState('todos')
+  // ?plano=<id> vem do link "Ver alunos" da tela de Planos
+  const [plano, setPlano] = useState(() => params.get('plano') ?? 'todos')
   const [ordem, setOrdem] = useState<'nome' | 'frequencia' | 'matricula'>('nome')
   const [emEdicao, setEmEdicao] = useState<Aluno | null>(null)
   const [formAberto, setFormAberto] = useState(false)
@@ -85,6 +90,10 @@ export function Alunos() {
     link.click()
     URL.revokeObjectURL(url)
   }
+
+  if (consultaAlunos.isError)
+    return <ErroCarga mensagem={mensagemDeErro(consultaAlunos.error)} aoTentarDeNovo={() => consultaAlunos.refetch()} />
+  if (consultaAlunos.isPending) return <Carregando />
 
   return (
     <>
@@ -216,7 +225,7 @@ export function Alunos() {
                               {a.nome}
                             </span>
                             <span className="block truncate text-xs text-rs-gray-500">
-                              {idade(a.nascimento)} anos · desde {dataCurta(a.matriculaEm)}
+                              {a.nascimento && `${idade(a.nascimento)} anos · `}desde {dataCurta(a.matriculaEm)}
                             </span>
                           </span>
                         </Link>

@@ -1,6 +1,6 @@
 /* =========================================================================
-   Modelo de domínio do REDSHIELD.
-   Estes tipos são o contrato que o back-end deverá honrar na Fase 2.
+   Modelo de domínio do REDSHIELD, do jeito que as telas usam.
+   A API fala em centavos e `null`; a conversão fica em `src/api/` (borda).
    ========================================================================= */
 
 export type Papel = 'gestor' | 'professor' | 'aluno'
@@ -24,20 +24,28 @@ export type StatusPagamento = 'em_dia' | 'vence_em_breve' | 'atrasado'
 export interface Aluno {
   id: string
   nome: string
-  email: string
-  telefone: string
-  nascimento: string // ISO
+  email: string // '' quando não informado
+  telefone: string // '' quando não informado
+  nascimento: string // ISO; '' quando não informado
   avatar?: string
   faixa: Faixa
   graus: number
   status: StatusAluno
   matriculaEm: string // ISO
-  planoId: string
+  planoId: string // '' = sem plano
   vencimentoDia: number // dia do mês
+  /** Calculado pelo servidor a partir das cobranças; não é editável. */
   statusPagamento: StatusPagamento
   frequencia30d: number // 0-100
   responsavel?: { nome: string; telefone: string }
   observacoes?: string
+  /** Turmas em que o aluno está hoje (vínculo aluno ↔ turma, defeito 1). */
+  turmaIds?: string[]
+  /** Já tem login no sistema. */
+  temAcesso?: boolean
+  /** LGPD: quem consentiu e quando. */
+  consentimento?: { em: string; por: string } | null
+  usoImagemAutorizado?: boolean
 }
 
 export type Periodicidade = 'mensal' | 'trimestral' | 'semestral' | 'anual'
@@ -59,6 +67,9 @@ export interface Turma {
   faixaEtaria: string
   nivel: string
   cor: string
+  professorId?: string | null
+  infantil?: boolean
+  ativa?: boolean
 }
 
 export type DiaSemana = 0 | 1 | 2 | 3 | 4 | 5 | 6
@@ -72,6 +83,7 @@ export interface Aula {
   fim: string // "20:00"
   capacidade: number
   local: string
+  ativa?: boolean
 }
 
 export type StatusPresenca = 'presente' | 'ausente' | 'justificado'

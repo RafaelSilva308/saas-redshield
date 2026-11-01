@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/Button'
 import { Input, Select, Switch, Textarea } from '@/components/ui/Field'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
-import { EmptyState, PageHeader, Progress } from '@/components/ui/Misc'
-import { useStore } from '@/app/store'
+import { Carregando, EmptyState, ErroCarga, PageHeader, Progress } from '@/components/ui/Misc'
+import { usePlanos, useSalvarPlano } from '@/api/planos'
+import { useAlunos } from '@/api/alunos'
+import { mensagemDeErro } from '@/lib/api'
 import { brl } from '@/lib/format'
 import type { Periodicidade, Plano } from '@/types'
 import { cn } from '@/lib/cn'
@@ -30,7 +32,11 @@ const VAZIO: Plano = {
 }
 
 export function Planos() {
-  const { planos, alunos, salvarPlano, alternarPlano } = useStore()
+  const consultaPlanos = usePlanos()
+  const consultaAlunos = useAlunos()
+  const salvar = useSalvarPlano()
+  const planos = useMemo(() => consultaPlanos.data ?? [], [consultaPlanos.data])
+  const alunos = useMemo(() => consultaAlunos.data ?? [], [consultaAlunos.data])
   const [aberto, setAberto] = useState(false)
   const [emEdicao, setEmEdicao] = useState<Plano | null>(null)
   const [dados, setDados] = useState<Plano>(VAZIO)
@@ -62,10 +68,31 @@ export function Planos() {
 
   const submeter = () => {
     if (dados.nome.trim().length < 3) return setErro('Dê um nome claro ao plano.')
-    if (dados.valor <= 0) return setErro('Informe um valor maior que zero.')
-    salvarPlano(dados)
-    setAberto(false)
+    if (!(dados.valor > 0)) return setErro('Informe um valor maior que zero.')
+    salvar.mutate(dados, {
+      onSuccess: () => setAberto(false),
+      onError: (e) => setErro(mensagemDeErro(e)),
+    })
   }
+
+  const [erroAlternar, setErroAlternar] = useState('')
+  const alternar = (p: Plano) => {
+    setErroAlternar('')
+    salvar.mutate({ ...p, ativo: !p.ativo }, { onError: (e) => setErroAlternar(mensagemDeErro(e)) })
+  }
+
+  const falha = consultaPlanos.error ?? consultaAlunos.error
+  if (falha)
+    return (
+      <ErroCarga
+        mensagem={mensagemDeErro(falha)}
+        aoTentarDeNovo={() => {
+          consultaPlanos.refetch()
+          consultaAlunos.refetch()
+        }}
+      />
+    )
+  if (consultaPlanos.isPending || consultaAlunos.isPending) return <Carregando />
 
   return (
     <>
@@ -79,6 +106,22 @@ export function Planos() {
           </Button>
         }
       />
+
+      {erroAlternar && (
+        <p role="alert" className="mb-4 rounded-md border border-rs-red-100 bg-rs-red-50 px-3 py-2 text-sm font-medium text-rs-red-700">
+          {erroAlternar}
+        </p>
+      )}
+
+      {planos.length === 0 && (
+        <Card>
+          <EmptyState
+            icone={<CreditCard className="size-6" />}
+            titulo="Nenhum plano cadastrado"
+            mensagem="Crie o primeiro plano para poder matricular alunos e gerar cobranças."
+          />
+        </Card>
+      )}
 
       {/* Grade de planos */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -131,7 +174,7 @@ export function Planos() {
                 <Button variante="contorno" tamanho="sm" onClick={() => abrir(p)}>
                   Editar
                 </Button>
-                <Button variante="fantasma" tamanho="sm" onClick={() => alternarPlano(p.id)}>
+                <Button variante="fantasma" tamanho="sm" onClick={() => alternar(p)} disabled={salvar.isPending}>
                   {p.ativo ? 'Pausar' : 'Reativar'}
                 </Button>
                 <Link
@@ -187,8 +230,8 @@ export function Planos() {
             <Button variante="fantasma" onClick={() => setAberto(false)}>
               Cancelar
             </Button>
-            <Button variante="primaria" onClick={submeter}>
-              {emEdicao ? 'Salvar alterações' : 'Criar plano'}
+            <Button variante="primaria" onClick={submeter} disabled={salvar.isPending}>
+              {salvar.isPending ? 'Salvando…' : emEdicao ? 'Salvar alterações' : 'Criar plano'}
             </Button>
           </>
         }
@@ -212,7 +255,7 @@ export function Planos() {
               label="Valor (R$)"
               type="number"
               min={0}
-              step={10}
+              step={0.01}
               value={dados.valor}
               onChange={(e) => setDados({ ...dados, valor: Number(e.target.value) })}
             />
