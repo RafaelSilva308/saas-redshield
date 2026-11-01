@@ -110,11 +110,14 @@ export type TipoTransacao = 'receita' | 'despesa'
 export interface Transacao {
   id: string
   tipo: TipoTransacao
-  categoria: string
+  categoriaId?: string
+  categoria: string // nome, para exibir
   descricao: string
   valor: number
   data: string // ISO date
   alunoId?: string
   metodo: 'pix' | 'dinheiro' | 'cartao' | 'boleto' | 'transferencia'
   conciliada: boolean
+  /** Lançamento criado pela baixa de uma mensalidade: só muda desfazendo a baixa. */
+  cobrancaId?: string | null
 }
