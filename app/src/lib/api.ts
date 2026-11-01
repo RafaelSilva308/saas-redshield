@@ -19,7 +19,7 @@ export class ErroApi extends Error {
   }
 }
 
-/** Avisados quando a API responde 401 (sessão expirada ou encerrada em outro lugar). */
+/** Avisados quando a API diz que não há sessão (expirada ou encerrada em outro lugar). */
 const aoPerderSessao = new Set<() => void>()
 
 export function quandoPerderSessao(fn: () => void) {
@@ -37,7 +37,10 @@ async function requisitar<T>(metodo: Metodo, caminho: string, corpo?: unknown): 
     resp = await fetch(BASE + caminho, {
       method: metodo,
       credentials: 'same-origin',
-      headers: corpo === undefined ? { accept: 'application/json' } : { accept: 'application/json', 'content-type': 'application/json' },
+      headers:
+        corpo === undefined
+          ? { accept: 'application/json' }
+          : { accept: 'application/json', 'content-type': 'application/json' },
       body: corpo === undefined ? undefined : JSON.stringify(corpo),
     })
   } catch {
@@ -49,8 +52,10 @@ async function requisitar<T>(metodo: Metodo, caminho: string, corpo?: unknown): 
   const dados: unknown = await resp.json().catch(() => null)
 
   if (!resp.ok) {
-    if (resp.status === 401) aoPerderSessao.forEach((fn) => fn())
-    const erro = (dados as { erro?: { codigo?: string; mensagem?: string; campos?: Record<string, string> } } | null)?.erro
+    const erro = (dados as { erro?: { codigo?: string; mensagem?: string; campos?: Record<string, string> } } | null)
+      ?.erro
+    // Só sessão ausente ou expirada derruba o login. Outro 401 (senha atual errada, por exemplo) é erro comum.
+    if (resp.status === 401 && erro?.codigo === 'nao_autenticado') aoPerderSessao.forEach((fn) => fn())
     throw new ErroApi(
       resp.status,
       erro?.codigo ?? 'erro_desconhecido',

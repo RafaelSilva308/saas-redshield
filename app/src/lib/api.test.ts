@@ -42,7 +42,12 @@ describe('api', () => {
 
     const erro = await api.post('/planos', {}).catch((e: unknown) => e)
     expect(erro).toBeInstanceOf(ErroApi)
-    expect(erro).toMatchObject({ status: 400, codigo: 'validacao', message: 'Confira os campos.', campos: { nome: 'Obrigatório.' } })
+    expect(erro).toMatchObject({
+      status: 400,
+      codigo: 'validacao',
+      message: 'Confira os campos.',
+      campos: { nome: 'Obrigatório.' },
+    })
   })
 
   it('erro sem corpo reconhecível ainda tem mensagem legível', async () => {
@@ -58,7 +63,12 @@ describe('api', () => {
   })
 
   it('avisa quem escuta quando a sessão cai (401)', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(resposta(401, { erro: { codigo: 'nao_autenticado', mensagem: 'Entre para continuar.' } })))
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(resposta(401, { erro: { codigo: 'nao_autenticado', mensagem: 'Entre para continuar.' } })),
+    )
     const ouvinte = vi.fn()
     const parar = quandoPerderSessao(ouvinte)
 
@@ -68,5 +78,21 @@ describe('api', () => {
     parar()
     await api.get('/auth/eu').catch(() => {})
     expect(ouvinte).toHaveBeenCalledTimes(1)
+  })
+
+  it('outro 401 (senha atual errada) não derruba a sessão', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          resposta(401, { erro: { codigo: 'credenciais_invalidas', mensagem: 'A senha atual está incorreta.' } }),
+        ),
+    )
+    const ouvinte = vi.fn()
+    const parar = quandoPerderSessao(ouvinte)
+    await expect(api.post('/auth/trocar-senha', {})).rejects.toMatchObject({ codigo: 'credenciais_invalidas' })
+    expect(ouvinte).not.toHaveBeenCalled()
+    parar()
   })
 })
