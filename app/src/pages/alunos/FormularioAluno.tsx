@@ -28,6 +28,7 @@ const VAZIO: Aluno = {
   turmaIds: [],
   usoImagemAutorizado: false,
   temAcesso: false,
+  anonimizado: false,
 }
 
 type Campo = 'nome' | 'email' | 'telefone' | 'nascimento' | 'planoId' | 'turmaIds' | 'responsavel' | 'consentimento'

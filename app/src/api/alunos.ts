@@ -25,6 +25,7 @@ export interface AlunoDto {
   usoImagemAutorizado: boolean
   turmaIds: string[]
   temAcesso: boolean
+  anonimizado: boolean
 }
 
 export const deAlunoDto = (a: AlunoDto): Aluno => ({
@@ -45,6 +46,7 @@ export const deAlunoDto = (a: AlunoDto): Aluno => ({
   observacoes: a.observacoes ?? undefined,
   turmaIds: a.turmaIds,
   temAcesso: a.temAcesso,
+  anonimizado: a.anonimizado,
   consentimento: a.consentimento,
   usoImagemAutorizado: a.usoImagemAutorizado,
 })

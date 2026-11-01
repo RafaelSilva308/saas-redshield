@@ -18,6 +18,7 @@ import {
 } from '@/api/alunos'
 import { usePlanos } from '@/api/planos'
 import { useAulas, useTurmas } from '@/api/turmas'
+import { DadosPessoais } from './alunos/DadosPessoais'
 import { ErroApi, mensagemDeErro } from '@/lib/api'
 import { FAIXAS, STATUS_ALUNO, STATUS_PAGAMENTO, brl, dataCurta, dataLonga, idade } from '@/lib/format'
 import type { Faixa } from '@/types'
@@ -72,7 +73,8 @@ export function AlunoDetalhe() {
   const pagamentos = cobrancas.data ?? []
 
   if (consulta.isPending) return <Carregando />
-  const naoExiste = consulta.error instanceof ErroApi && (consulta.error.status === 404 || consulta.error.status === 400)
+  const naoExiste =
+    consulta.error instanceof ErroApi && (consulta.error.status === 404 || consulta.error.status === 400)
   if (consulta.isError && !naoExiste)
     return <ErroCarga mensagem={mensagemDeErro(consulta.error)} aoTentarDeNovo={() => consulta.refetch()} />
 
@@ -159,29 +161,35 @@ export function AlunoDetalhe() {
             <p className="mt-2 text-sm text-rs-gray-500">
               Turmas:{' '}
               <span className="font-semibold text-rs-gray-700">
-                {turmasDoAluno.length ? turmasDoAluno.map((t) => t.nome).join(', ') : 'nenhuma (não aparece na presença)'}
+                {turmasDoAluno.length
+                  ? turmasDoAluno.map((t) => t.nome).join(', ')
+                  : 'nenhuma (não aparece na presença)'}
               </span>
               {' · '}
               {aluno.temAcesso ? 'tem acesso ao sistema' : 'sem acesso ao sistema'}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {!aluno.temAcesso && aluno.status !== 'inativo' && (
-              <Button
-                variante="contorno"
-                onClick={enviarConvite}
-                disabled={convidar.isPending || !aluno.email}
-                title={aluno.email ? undefined : 'Cadastre um e-mail para enviar o convite.'}
-              >
-                <Send className="size-4" />
-                {convidar.isPending ? 'Enviando…' : 'Convidar para o sistema'}
+          {aluno.anonimizado ? (
+            <Badge tom="neutro">Cadastro anonimizado (LGPD) · não pode ser alterado</Badge>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {!aluno.temAcesso && aluno.status !== 'inativo' && (
+                <Button
+                  variante="contorno"
+                  onClick={enviarConvite}
+                  disabled={convidar.isPending || !aluno.email}
+                  title={aluno.email ? undefined : 'Cadastre um e-mail para enviar o convite.'}
+                >
+                  <Send className="size-4" />
+                  {convidar.isPending ? 'Enviando…' : 'Convidar para o sistema'}
+                </Button>
+              )}
+              <Button variante="secundaria" onClick={() => setEditando(true)}>
+                <Pencil className="size-4" />
+                Editar cadastro
               </Button>
-            )}
-            <Button variante="secundaria" onClick={() => setEditando(true)}>
-              <Pencil className="size-4" />
-              Editar cadastro
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
 
         {aviso && (
@@ -371,13 +379,20 @@ export function AlunoDetalhe() {
 
       {aba === 'financeiro' && ehGestor && (
         <Card>
-          <CardHeader titulo="Cobranças" descricao={`Plano ${plano?.nome ?? '—'} · vencimento dia ${aluno.vencimentoDia}`} />
+          <CardHeader
+            titulo="Cobranças"
+            descricao={`Plano ${plano?.nome ?? '—'} · vencimento dia ${aluno.vencimentoDia}`}
+          />
           {cobrancas.isError ? (
             <ErroCarga mensagem={mensagemDeErro(cobrancas.error)} aoTentarDeNovo={() => cobrancas.refetch()} />
           ) : cobrancas.isPending ? (
             <Carregando />
           ) : pagamentos.length === 0 ? (
-            <EmptyState icone={<CreditCard className="size-6" />} titulo="Sem cobranças" mensagem="Nenhuma cobrança gerada para este aluno." />
+            <EmptyState
+              icone={<CreditCard className="size-6" />}
+              titulo="Sem cobranças"
+              mensagem="Nenhuma cobrança gerada para este aluno."
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-left">
@@ -413,6 +428,8 @@ export function AlunoDetalhe() {
           )}
         </Card>
       )}
+
+      {ehGestor && <DadosPessoais id={aluno.id} nome={aluno.nome} anonimizado={aluno.anonimizado} />}
 
       <FormularioAluno aberto={editando} aluno={aluno} aoFechar={() => setEditando(false)} />
     </>

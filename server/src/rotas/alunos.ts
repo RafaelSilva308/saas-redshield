@@ -72,6 +72,8 @@ export const alunoDto = (a: Linha) => ({
   usoImagemAutorizado: a.uso_imagem_autorizado,
   turmaIds: a.turma_ids as string[],
   temAcesso: a.tem_acesso as boolean,
+  /** LGPD: cadastro anonimizado não pode mais ser alterado. */
+  anonimizado: !!a.anonimizado_em,
 })
 
 /** Garante que plano e turmas pertencem à academia da sessão (ids vêm do cliente). */

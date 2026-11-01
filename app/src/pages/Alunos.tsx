@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Download, Pencil, Search, SlidersHorizontal, UserPlus, Users } from 'lucide-react'
+import { Download, FileUp, Pencil, Search, SlidersHorizontal, UserPlus, Users } from 'lucide-react'
 import { Carregando, PageHeader, EmptyState, ErroCarga, Tabs } from '@/components/ui/Misc'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -11,6 +11,8 @@ import { useAlunos } from '@/api/alunos'
 import { usePlanos } from '@/api/planos'
 import { mensagemDeErro } from '@/lib/api'
 import { FormularioAluno } from './alunos/FormularioAluno'
+import { ImportarAlunos } from './alunos/ImportarAlunos'
+import { useAuth } from '@/app/auth'
 import { FAIXAS, STATUS_ALUNO, STATUS_PAGAMENTO, dataCurta, idade } from '@/lib/format'
 import type { Aluno, Faixa, StatusAluno } from '@/types'
 import { cn } from '@/lib/cn'
@@ -31,6 +33,9 @@ export function Alunos() {
   const [ordem, setOrdem] = useState<'nome' | 'frequencia' | 'matricula'>('nome')
   const [emEdicao, setEmEdicao] = useState<Aluno | null>(null)
   const [formAberto, setFormAberto] = useState(false)
+  const [importando, setImportando] = useState(false)
+  // Importar é só do gestor (a API recusa para o professor).
+  const ehGestor = useAuth().usuario?.papel === 'gestor'
 
   // ?novo=1 abre o formulário direto (usado pelos atalhos do painel)
   useEffect(() => {
@@ -102,6 +107,12 @@ export function Alunos() {
         subtitulo="Cadastro, situação de pagamento e frequência de cada aluno da academia."
         acoes={
           <>
+            {ehGestor && (
+              <Button variante="contorno" onClick={() => setImportando(true)}>
+                <FileUp className="size-4" />
+                Importar
+              </Button>
+            )}
             <Button variante="contorno" onClick={exportarCsv}>
               <Download className="size-4" />
               Exportar
@@ -275,6 +286,8 @@ export function Alunos() {
           </div>
         )}
       </Card>
+
+      <ImportarAlunos aberto={importando} aoFechar={() => setImportando(false)} />
 
       <FormularioAluno
         aberto={formAberto}

@@ -77,7 +77,6 @@ npx oxlint         # lint (restam 4 avisos antigos de react/only-export-componen
 ## Pendências críticas antes de qualquer lançamento
 
 - **V1: nome e identidade.** O nome REDSHIELD está adotado em todo o sistema, mas **não foi verificado** (INPI, domínio). Cores, tipografia e símbolo são provisórios; `referencia_visual_conceitual.png` traz símbolo e fotos que **não** são do REDSHIELD e deve sair do repositório antes de divulgar.
-- Telas que a API já suporta e o front ainda não tem: importação de CSV e exportar/anonimizar (LGPD), justamente as que a apresentação comercial mostra. Ver `PROGRESSO.md`.
 - Todas as pendências E1–E17 dependem de conversa com a academia; ver o roteiro de demonstração.
 
 ## Fluxo de trabalho no GitHub

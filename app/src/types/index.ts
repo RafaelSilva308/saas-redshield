@@ -43,6 +43,8 @@ export interface Aluno {
   turmaIds: string[]
   /** Já tem login no sistema. */
   temAcesso: boolean
+  /** LGPD: dados pessoais apagados; o cadastro não pode mais ser alterado. */
+  anonimizado: boolean
   /** LGPD: quem consentiu e quando. */
   consentimento?: { em: string; por: string } | null
   usoImagemAutorizado: boolean

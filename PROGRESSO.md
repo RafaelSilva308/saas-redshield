@@ -2,7 +2,7 @@
 
 Registro vivo do desenvolvimento. **Atualize ao fim de cada sessão.** O plano e as decisões continuam no [`ROADMAP.md`](./ROADMAP.md) (fonte de verdade); aqui fica o estado da execução.
 
-Última atualização: 2026-10-31 · branch `feat/front-api` (sem PR). **Servidor completo para a v1 e front ligado à API; faltam duas telas (importação de CSV e LGPD), as contas de infraestrutura e as decisões do dono.**
+Última atualização: 2026-10-31 · branch `feat/front-api` (sem PR). **Servidor completo para a v1 e front ligado à API, com todas as telas; faltam as contas de infraestrutura e as decisões do dono.**
 
 ## Como rodar o back-end (`server/`)
 
@@ -52,8 +52,6 @@ npm run rotinas          # roda uma vez as rotinas (cobranças do mês e avisos)
 - [ ] Decisões abertas: **E1** (regra de graduação), E8 (check-in offline), E9 (quais avisos ligar), E11 (cancelamento), E14 (criança/sem celular), E16 (prazo do check-in), E17 (manter "justificado"), V1–V6.
 
 **Front**
-- [ ] Importação de CSV (simular → confirmar), na tela de Alunos.
-- [ ] Exportar e anonimizar (LGPD), na ficha do aluno.
 - [ ] Equipe: a API não lista nem convida professor/gestor (hoje só por `npm run nova-academia`). Decidir se entra na v1.
 - [ ] Página ou link da política de privacidade dentro do sistema (depois da revisão jurídica).
 
@@ -71,7 +69,8 @@ npm run rotinas          # roda uma vez as rotinas (cobranças do mês e avisos)
 | Financeiro | Lançamentos e categorias; aba Mensalidades: gerar cobranças do mês, dar baixa, desfazer, cancelar | `pages/Financeiro.tsx`, `pages/financeiro/` |
 | Painel e Progresso | Métricas do servidor (defeito 9); versão do aluno só com os dados dele (defeito 8); registrar graduação a partir dos elegíveis | `pages/Painel.tsx`, `pages/painel/`, `pages/Progresso.tsx`, `pages/progresso/` |
 | Configurações | Dados da academia (gestor edita), avisos automáticos, troca da própria senha | `pages/Configuracoes.tsx` |
-| Servidor | `GET /eu/presencas`: o aluno lê o próprio histórico (com teste de isolamento) | `server/src/rotas/alunos.ts` |
+| Importação e LGPD | Importar alunos por CSV (conferir sem gravar → confirmar; lê UTF-8 e o CSV do Excel em Windows-1252; modelo para baixar); na ficha, baixar os dados do aluno e anonimizar com a palavra ANONIMIZAR, ficha travada depois. Só gestor | `pages/alunos/ImportarAlunos.tsx`, `pages/alunos/DadosPessoais.tsx` |
+| Servidor | `GET /eu/presencas`: o aluno lê o próprio histórico (com teste de isolamento); `anonimizado` no cadastro do aluno | `server/src/rotas/alunos.ts` |
 | Servidor | `WEB_DIST` relativo (como no `.env.example`) derrubava a API ao subir; agora é resolvido para caminho absoluto. Verificado: API servindo o build do front na mesma origem, com a CSP de produção e os gráficos | `server/src/config.ts` |
 
 - `mock.ts`, `selectors.ts` e `store.tsx` foram apagados. O protótipo com dados simulados ficou congelado na branch **`prototipo`**, e o GitHub Pages passou a publicar só ela.
