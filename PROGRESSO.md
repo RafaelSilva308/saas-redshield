@@ -1,8 +1,8 @@
 # PROGRESSO — o que já foi feito e o que falta
 
-Registro vivo do desenvolvimento do back-end. **Atualize ao fim de cada sessão.** O plano e as decisões continuam no [`ROADMAP.md`](./ROADMAP.md) (fonte de verdade); aqui fica o estado da execução.
+Registro vivo do desenvolvimento. **Atualize ao fim de cada sessão.** O plano e as decisões continuam no [`ROADMAP.md`](./ROADMAP.md) (fonte de verdade); aqui fica o estado da execução.
 
-Última atualização: 2026-10-10 · branch `feat/api-fundacao` (sem PR). **O servidor está completo para a v1; faltam o front, as contas de infraestrutura e as decisões do dono.**
+Última atualização: 2026-10-31 · branch `feat/front-api` (sem PR). **Servidor completo para a v1 e front ligado à API; faltam duas telas (importação de CSV e LGPD), as contas de infraestrutura e as decisões do dono.**
 
 ## Como rodar o back-end (`server/`)
 
@@ -12,7 +12,7 @@ cp .env.example .env     # ajustar DATABASE_URL (PostgreSQL 15+)
 npm run migrar           # aplica db/schema.sql (001) + db/migrations/*
 npm run seed             # dados equivalentes ao protótipo (recusa rodar em produção)
 npm run dev              # API em http://localhost:3000/api/v1
-npm test                 # 80 testes; sobe um PostgreSQL embutido, não precisa de banco local
+npm test                 # 81 testes; sobe um PostgreSQL embutido, não precisa de banco local
 npm run typecheck && npx tsc -p tsconfig.test.json --noEmit
 npm run nova-academia    # cria academia + gestor (variáveis ACADEMIA_NOME, GESTOR_NOME, GESTOR_EMAIL, ACADEMIA_FUSO)
 npm run rotinas          # roda uma vez as rotinas (cobranças do mês e avisos)
@@ -51,13 +51,31 @@ npm run rotinas          # roda uma vez as rotinas (cobranças do mês e avisos)
 - [ ] Revisão jurídica da política de privacidade e página/link dela dentro do sistema.
 - [ ] Decisões abertas: **E1** (regra de graduação), E8 (check-in offline), E9 (quais avisos ligar), E11 (cancelamento), E14 (criança/sem celular), E16 (prazo do check-in), E17 (manter "justificado"), V1–V6.
 
-**Front** (nada foi ligado à API; o GitHub Pages continua publicando o protótipo com dados simulados, de propósito, para a demonstração não depender de servidor)
-- [ ] `src/lib/api.ts`, TanStack Query, estados de carregamento/erro; conversão reais ↔ centavos; trocar `store.tsx`/`selectors.ts`/`mock.ts` por chamadas (cada função do `store.tsx` corresponde a um endpoint); remover `fecharChamada`/`chamada.fechada` (defeito 10).
-- [ ] Telas novas: redefinir senha (`#/redefinir-senha?token=`), correção do professor, aula cancelada, importação de CSV (simular → confirmar), exportar/anonimizar na ficha do aluno.
-- [ ] Painel do aluno só com dados dele (o servidor já garante; falta a tela).
+**Front**
+- [ ] Importação de CSV (simular → confirmar), na tela de Alunos.
+- [ ] Exportar e anonimizar (LGPD), na ficha do aluno.
+- [ ] Equipe: a API não lista nem convida professor/gestor (hoje só por `npm run nova-academia`). Decidir se entra na v1.
+- [ ] Página ou link da política de privacidade dentro do sistema (depois da revisão jurídica).
 
 **Depois do front**
 - [ ] Teste de ponta a ponta no navegador, piloto em paralelo à planilha e go-live (ROADMAP, fases 9 e 10).
+
+## Feito (front, `feat/front-api`)
+
+| Área | O que existe | Onde |
+|---|---|---|
+| Base | Cliente da API (mesma origem, cookie), erros da API viram mensagem pronta; TanStack Query; `Carregando`/`ErroCarga`; conversão reais ↔ centavos só na borda; proxy do Vite para a API local; Vitest no front e no CI | `app/src/lib/`, `app/src/api/` |
+| Login | Entrar, sair, sessão mantida ao recarregar; esqueci a senha; criar/redefinir senha pelo link do e-mail (`#/redefinir-senha?token=`, serve também para o convite) | `app/auth.tsx`, `pages/Entrar.tsx`, `pages/RedefinirSenha.tsx` |
+| Cadastros | Planos; alunos com turmas (defeito 1), plano, consentimento LGPD e uso de imagem; ficha com presenças de 90 dias e cobranças; convite de acesso ao aluno | `pages/Planos.tsx`, `pages/Alunos.tsx`, `pages/AlunoDetalhe.tsx` |
+| Presença | Check-in com a data do servidor; lista da aula pelo vínculo aluno-turma; correção do professor (otimista); cancelar e reativar aula; sem "fechar chamada" (defeito 10) | `pages/Checkin.tsx`, `pages/Presenca.tsx`, `pages/Agenda.tsx` |
+| Financeiro | Lançamentos e categorias; aba Mensalidades: gerar cobranças do mês, dar baixa, desfazer, cancelar | `pages/Financeiro.tsx`, `pages/financeiro/` |
+| Painel e Progresso | Métricas do servidor (defeito 9); versão do aluno só com os dados dele (defeito 8); registrar graduação a partir dos elegíveis | `pages/Painel.tsx`, `pages/painel/`, `pages/Progresso.tsx`, `pages/progresso/` |
+| Configurações | Dados da academia (gestor edita), avisos automáticos, troca da própria senha | `pages/Configuracoes.tsx` |
+| Servidor | `GET /eu/presencas`: o aluno lê o próprio histórico (com teste de isolamento) | `server/src/rotas/alunos.ts` |
+| Servidor | `WEB_DIST` relativo (como no `.env.example`) derrubava a API ao subir; agora é resolvido para caminho absoluto. Verificado: API servindo o build do front na mesma origem, com a CSP de produção e os gráficos | `server/src/config.ts` |
+
+- `mock.ts`, `selectors.ts` e `store.tsx` foram apagados. O protótipo com dados simulados ficou congelado na branch **`prototipo`**, e o GitHub Pages passou a publicar só ela.
+- **Para o Pages voltar a publicar:** em *Settings → Environments → github-pages*, liberar a branch `prototipo` (hoje só a `main` pode publicar) e rodar o fluxo *Deploy no GitHub Pages*.
 
 ## Pontos de atenção
 
@@ -67,3 +85,5 @@ npm run rotinas          # roda uma vez as rotinas (cobranças do mês e avisos)
 - Anonimizar não tem volta e mantém cobranças/lançamentos pagos por obrigação fiscal; confirme o prazo de guarda com o contador.
 - O seed (`npm run seed`) cria categorias financeiras padrão só pelo CLI; `semear()` em si não as cria (um teste cria "Aluguel" e espera 201).
 - A importação grava consentimento LGPD **somente** se o gestor informar `consentimentoPor`; sem isso o cadastro fica sem consentimento registrado.
+- Regra provisória de graduação (E1): o próximo passo depois da branca com 4 graus é **cinza** (ordem das faixas infantis), também para adultos. A tela mostra o que a API sugere; rever junto com E1.
+- A cobrança de um aluno matriculado depois do dia de vencimento vence no mês seguinte (regra do servidor, de propósito). Na aba Mensalidades isso aparece como cobrança de outubro com vencimento em novembro.

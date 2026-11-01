@@ -40,12 +40,12 @@ export interface Aluno {
   responsavel?: { nome: string; telefone: string }
   observacoes?: string
   /** Turmas em que o aluno está hoje (vínculo aluno ↔ turma, defeito 1). */
-  turmaIds?: string[]
+  turmaIds: string[]
   /** Já tem login no sistema. */
-  temAcesso?: boolean
+  temAcesso: boolean
   /** LGPD: quem consentiu e quando. */
   consentimento?: { em: string; por: string } | null
-  usoImagemAutorizado?: boolean
+  usoImagemAutorizado: boolean
 }
 
 export type Periodicidade = 'mensal' | 'trimestral' | 'semestral' | 'anual'
@@ -67,9 +67,9 @@ export interface Turma {
   faixaEtaria: string
   nivel: string
   cor: string
-  professorId?: string | null
-  infantil?: boolean
-  ativa?: boolean
+  professorId: string | null
+  infantil: boolean
+  ativa: boolean
 }
 
 export type DiaSemana = 0 | 1 | 2 | 3 | 4 | 5 | 6
@@ -83,27 +83,13 @@ export interface Aula {
   fim: string // "20:00"
   capacidade: number
   local: string
-  ativa?: boolean
+  ativa: boolean
 }
 
 export type StatusPresenca = 'presente' | 'ausente' | 'justificado'
 
-/** Quem registrou a presença: o professor na chamada, ou o próprio aluno pelo check-in. */
+/** Quem registrou a presença: o professor (correção) ou o próprio aluno (check-in). */
 export type OrigemPresenca = 'professor' | 'aluno'
-
-export interface RegistroPresenca {
-  alunoId: string
-  status: StatusPresenca
-  origem?: OrigemPresenca // ausente nos registros antigos = professor
-  horario?: string // "HH:MM" local, em que o registro foi feito
-}
-
-export interface ChamadaAula {
-  id: string
-  aulaId: string
-  data: string // ISO date
-  registros: RegistroPresenca[]
-}
 
 export type TipoTransacao = 'receita' | 'despesa'
 

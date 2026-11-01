@@ -439,7 +439,7 @@ function PainelEquipe() {
       <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-rs-gray-500">
         <span className="rs-label">Turmas ativas</span>
         {turmas
-          .filter((t) => t.ativa !== false)
+          .filter((t) => t.ativa)
           .map((t) => (
             <Badge key={t.id} tom="neutro">
               <span aria-hidden className="size-2 rounded-full" style={{ background: t.cor }} />

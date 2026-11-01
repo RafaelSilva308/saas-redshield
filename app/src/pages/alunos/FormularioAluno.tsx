@@ -27,6 +27,7 @@ const VAZIO: Aluno = {
   frequencia30d: 0,
   turmaIds: [],
   usoImagemAutorizado: false,
+  temAcesso: false,
 }
 
 type Campo = 'nome' | 'email' | 'telefone' | 'nascimento' | 'planoId' | 'turmaIds' | 'responsavel' | 'consentimento'
@@ -69,7 +70,7 @@ export function FormularioAluno({
 
   const alternarTurma = (id: string) =>
     setDados((d) => {
-      const atuais = d.turmaIds ?? []
+      const atuais = d.turmaIds
       return { ...d, turmaIds: atuais.includes(id) ? atuais.filter((t) => t !== id) : [...atuais, id] }
     })
 
@@ -245,12 +246,12 @@ export function FormularioAluno({
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
               {turmas
-                .filter((t) => t.ativa !== false || dados.turmaIds?.includes(t.id))
+                .filter((t) => t.ativa || dados.turmaIds.includes(t.id))
                 .map((t) => (
                   <label key={t.id} className="flex cursor-pointer items-center gap-2 text-sm text-rs-gray-700">
                     <input
                       type="checkbox"
-                      checked={dados.turmaIds?.includes(t.id) ?? false}
+                      checked={dados.turmaIds.includes(t.id)}
                       onChange={() => alternarTurma(t.id)}
                       className="size-4 cursor-pointer accent-rs-blue-600"
                     />

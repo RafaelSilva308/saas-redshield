@@ -70,7 +70,7 @@ export const paraAlunoDto = ({ aluno: a, consentimentoPor }: AlunoEdicao) => ({
   responsavel: a.responsavel ? { nome: a.responsavel.nome.trim(), telefone: a.responsavel.telefone.trim() } : null,
   observacoes: a.observacoes?.trim() || null,
   usoImagemAutorizado: a.usoImagemAutorizado ?? false,
-  turmaIds: a.turmaIds ?? [],
+  turmaIds: a.turmaIds,
   ...(consentimentoPor?.trim() ? { consentimento: { por: consentimentoPor.trim() } } : {}),
 })
 

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Field'
 import { Logo, LogoMark } from '@/components/Logo'
 import { ROTULO_PAPEL } from '@/app/auth'
+import { useEsqueciSenha } from '@/api/conta'
+import { mensagemDeErro } from '@/lib/api'
 import type { Papel } from '@/types'
 
 /* Contas criadas pelo seed (`npm run seed` no servidor). Só aparecem em desenvolvimento:
@@ -28,6 +30,8 @@ export function Entrar() {
   const [verSenha, setVerSenha] = useState(false)
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [aviso, setAviso] = useState('')
+  const esqueci = useEsqueciSenha()
 
   if (usuario) return <Navigate to="/painel" replace />
 
@@ -43,6 +47,17 @@ export function Entrar() {
     setEnviando(false)
     if (r.ok) navigate(local.state?.de ?? '/painel', { replace: true })
     else setErro(r.erro ?? 'Não foi possível entrar.')
+  }
+
+  const pedirLink = () => {
+    setErro('')
+    setAviso('')
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setErro('Informe seu e-mail acima para receber o link.')
+    esqueci.mutate(email, {
+      // Mesma mensagem exista ou não a conta (a API também não revela).
+      onSuccess: () => setAviso('Se o e-mail estiver cadastrado, enviamos um link para criar uma nova senha. Ele vale por 1 hora.'),
+      onError: (e) => setErro(mensagemDeErro(e)),
+    })
   }
 
   const preencher = (e: string) => {
@@ -141,6 +156,12 @@ export function Entrar() {
               </button>
             </div>
 
+            {aviso && (
+              <p role="status" className="rounded-md border border-rs-gray-200 bg-rs-gray-50 px-3 py-2.5 text-sm text-rs-gray-700">
+                {aviso}
+              </p>
+            )}
+
             {erro && (
               <p role="alert" className="rounded-md border border-rs-red-100 bg-rs-red-50 px-3 py-2.5 text-sm font-medium text-rs-red-700">
                 {erro}
@@ -149,8 +170,13 @@ export function Entrar() {
 
             {/* "Manter conectado" saiu: a sessão já dura o prazo definido no servidor (SESSAO_DIAS). */}
             <div className="flex items-center justify-end pt-1">
-              <button type="button" className="cursor-pointer text-sm font-semibold text-rs-blue-600 hover:underline">
-                Esqueci a senha
+              <button
+                type="button"
+                onClick={pedirLink}
+                disabled={esqueci.isPending}
+                className="cursor-pointer text-sm font-semibold text-rs-blue-600 hover:underline disabled:opacity-50"
+              >
+                {esqueci.isPending ? 'Enviando…' : 'Esqueci a senha'}
               </button>
             </div>
 

@@ -99,7 +99,7 @@ export function AlunoDetalhe() {
   const proximaFaixa = idxFaixa >= 0 && idxFaixa < ORDEM_FAIXAS.length - 1 ? ORDEM_FAIXAS[idxFaixa + 1] : null
   const progressoGraduacao = Math.min(100, (aluno.graus / 4) * 100)
   const presentes = historico.filter((h) => h.situacao === 'presente').length
-  const turmasDoAluno = turmas.filter((t) => aluno.turmaIds?.includes(t.id))
+  const turmasDoAluno = turmas.filter((t) => aluno.turmaIds.includes(t.id))
 
   const enviarConvite = () => {
     setAviso(null)

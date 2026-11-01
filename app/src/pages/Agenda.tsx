@@ -23,6 +23,7 @@ const VAZIA: Aula = {
   fim: '20:00',
   capacidade: 30,
   local: 'Tatame 1',
+  ativa: true,
 }
 
 export function Agenda() {
@@ -34,7 +35,7 @@ export function Agenda() {
   const salvar = useSalvarAula()
   const remover = useRemoverAula()
   const aulas = useMemo(() => consultaAulas.data ?? [], [consultaAulas.data])
-  const TURMAS = useMemo(() => (consultaTurmas.data ?? []).filter((t) => t.ativa !== false), [consultaTurmas.data])
+  const TURMAS = useMemo(() => (consultaTurmas.data ?? []).filter((t) => t.ativa), [consultaTurmas.data])
   const turmaPorId = (id: string) => consultaTurmas.data?.find((t) => t.id === id)
   const [visao, setVisao] = useState<'semana' | 'lista'>('semana')
   const [turmaFiltro, setTurmaFiltro] = useState('todas')
