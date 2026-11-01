@@ -161,8 +161,8 @@ export function Topbar({ aoAbrirMenu }: { aoAbrirMenu: () => void }) {
                 <UserCog className="size-4" /> Configurações
               </Link>
               <button
-                onClick={() => {
-                  sair()
+                onClick={async () => {
+                  await sair()
                   navigate('/entrar')
                 }}
                 className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-rs-red-600 hover:bg-rs-red-50"

@@ -5,8 +5,18 @@ import { useAuth } from '@/app/auth'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Field'
 import { Logo, LogoMark } from '@/components/Logo'
-import { USUARIOS } from '@/data/mock'
 import { ROTULO_PAPEL } from '@/app/auth'
+import type { Papel } from '@/types'
+
+/* Contas criadas pelo seed (`npm run seed` no servidor). Só aparecem em desenvolvimento:
+   o build de produção não mostra atalhos nem a senha de demonstração. */
+const ACESSOS_DEMO: { email: string; papel: Papel }[] = import.meta.env.DEV
+  ? [
+      { email: 'gestor@redshield.com.br', papel: 'gestor' },
+      { email: 'professor@redshield.com.br', papel: 'professor' },
+      { email: 'aluno@redshield.com.br', papel: 'aluno' },
+    ]
+  : []
 
 export function Entrar() {
   const { usuario, entrar } = useAuth()
@@ -21,17 +31,18 @@ export function Entrar() {
 
   if (usuario) return <Navigate to="/painel" replace />
 
-  const submeter = (e: React.FormEvent) => {
+  const submeter = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!email.trim() || !senha) {
+      setErro('Informe o e-mail e a senha.')
+      return
+    }
     setErro('')
     setEnviando(true)
-    // Latência simulada: a Fase 2 troca por uma chamada real de autenticação.
-    setTimeout(() => {
-      const r = entrar(email, senha)
-      setEnviando(false)
-      if (r.ok) navigate(local.state?.de ?? '/painel', { replace: true })
-      else setErro(r.erro ?? 'Não foi possível entrar.')
-    }, 450)
+    const r = await entrar(email, senha)
+    setEnviando(false)
+    if (r.ok) navigate(local.state?.de ?? '/painel', { replace: true })
+    else setErro(r.erro ?? 'Não foi possível entrar.')
   }
 
   const preencher = (e: string) => {
@@ -136,11 +147,8 @@ export function Entrar() {
               </p>
             )}
 
-            <div className="flex items-center justify-between pt-1">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-rs-gray-700">
-                <input type="checkbox" defaultChecked className="size-4 cursor-pointer accent-rs-blue-600" />
-                Manter conectado
-              </label>
+            {/* "Manter conectado" saiu: a sessão já dura o prazo definido no servidor (SESSAO_DIAS). */}
+            <div className="flex items-center justify-end pt-1">
               <button type="button" className="cursor-pointer text-sm font-semibold text-rs-blue-600 hover:underline">
                 Esqueci a senha
               </button>
@@ -152,26 +160,27 @@ export function Entrar() {
             </Button>
           </form>
 
-          {/* Atalhos de demonstração — remover ao conectar o back-end real */}
-          <div className="mt-8 rounded-md border border-rs-gray-200 bg-rs-gray-50 p-4">
-            <p className="rs-label">Acessos de demonstração</p>
-            <ul className="mt-2.5 space-y-1.5">
-              {USUARIOS.map((u) => (
-                <li key={u.id}>
-                  <button
-                    onClick={() => preencher(u.email)}
-                    className="flex w-full cursor-pointer items-center justify-between gap-3 rounded px-2 py-1.5 text-left text-sm hover:bg-white"
-                  >
-                    <span className="truncate text-rs-gray-700">{u.email}</span>
-                    <span className="shrink-0 text-xs font-semibold uppercase tracking-wider text-rs-blue-600">
-                      {ROTULO_PAPEL[u.papel]}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 px-2 text-xs text-rs-gray-500">Senha para todos: treino123</p>
-          </div>
+          {ACESSOS_DEMO.length > 0 && (
+            <div className="mt-8 rounded-md border border-rs-gray-200 bg-rs-gray-50 p-4">
+              <p className="rs-label">Acessos de demonstração</p>
+              <ul className="mt-2.5 space-y-1.5">
+                {ACESSOS_DEMO.map((u) => (
+                  <li key={u.email}>
+                    <button
+                      onClick={() => preencher(u.email)}
+                      className="flex w-full cursor-pointer items-center justify-between gap-3 rounded px-2 py-1.5 text-left text-sm hover:bg-white"
+                    >
+                      <span className="truncate text-rs-gray-700">{u.email}</span>
+                      <span className="shrink-0 text-xs font-semibold uppercase tracking-wider text-rs-blue-600">
+                        {ROTULO_PAPEL[u.papel]}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 px-2 text-xs text-rs-gray-500">Senha para todos: treino123</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
