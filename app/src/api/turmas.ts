@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import type { Aula, DiaSemana, Turma } from '@/types'
 
@@ -60,5 +60,34 @@ export function useAulas() {
   return useQuery({
     queryKey: CHAVE_AULAS,
     queryFn: async () => (await api.get<{ itens: AulaDto[] }>('/aulas')).itens.map(deAulaDto),
+  })
+}
+
+/** Criar ou editar aula do quadro (gestor e professor). */
+export function useSalvarAula() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...a }: Aula) => {
+      const corpo = {
+        turmaId: a.turmaId,
+        titulo: a.titulo.trim(),
+        diaSemana: a.diaSemana,
+        inicio: a.inicio,
+        fim: a.fim,
+        capacidade: a.capacidade,
+        local: a.local.trim() || undefined,
+      }
+      return id ? api.patch<AulaDto>(`/aulas/${id}`, corpo) : api.post<AulaDto>('/aulas', corpo)
+    },
+    onSuccess: () => cliente.invalidateQueries({ queryKey: CHAVE_AULAS }),
+  })
+}
+
+/** Aula com histórico não some: a API a desativa e a frequência passada continua valendo. */
+export function useRemoverAula() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/aulas/${id}`),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: CHAVE_AULAS }),
   })
 }

@@ -280,11 +280,7 @@ export async function rotasAlunos(app: FastifyInstance, ctx: Contexto) {
   })
 
   /** Histórico de presença com a origem de cada registro; aula realizada sem registro aparece como "sem_checkin". */
-  app.get('/alunos/:id/presencas', { preHandler: equipe }, async (req) => {
-    const s = sessaoDe(req)
-    const { id } = validar(z.object({ id: uuid }), req.params)
-    const { dias } = validar(z.object({ dias: z.coerce.number().int().min(1).max(730).default(90) }), req.query)
-    if (!(await carregar(db, s.academiaId, id))) throw naoEncontrado('Aluno')
+  async function historicoPresenca(alunoId: string, dias: number, dia: string) {
     const { rows } = await db.query(
       `select ch.data, au.id as aula_id, au.titulo, au.inicio, p.status, p.origem, p.registrado_em, p.observacao
          from aluno_turma at
@@ -293,7 +289,7 @@ export async function rotasAlunos(app: FastifyInstance, ctx: Contexto) {
          left join presenca p on p.chamada_id = ch.id and p.aluno_id = at.aluno_id
         where at.aluno_id = $1 and ch.data >= $3::date - $2::int and ch.data <= $3::date
         order by ch.data desc, au.inicio desc`,
-      [id, dias, await hoje(s)],
+      [alunoId, dias, dia],
     )
     return {
       itens: rows.map((r) => ({
@@ -307,6 +303,23 @@ export async function rotasAlunos(app: FastifyInstance, ctx: Contexto) {
         observacao: r.observacao ?? null,
       })),
     }
+  }
+  const janela = z.object({ dias: z.coerce.number().int().min(1).max(730).default(90) })
+
+  app.get('/alunos/:id/presencas', { preHandler: equipe }, async (req) => {
+    const s = sessaoDe(req)
+    const { id } = validar(z.object({ id: uuid }), req.params)
+    const { dias } = validar(janela, req.query)
+    if (!(await carregar(db, s.academiaId, id))) throw naoEncontrado('Aluno')
+    return historicoPresenca(id, dias, await hoje(s))
+  })
+
+  /** O aluno lê o próprio histórico (Check-in, Painel e Progresso). O id vem só da sessão. */
+  app.get('/eu/presencas', { preHandler: exigir('aluno') }, async (req) => {
+    const s = sessaoDe(req)
+    const { dias } = validar(janela, req.query)
+    if (!s.alunoId || !(await carregar(db, s.academiaId, s.alunoId))) throw naoEncontrado('Aluno')
+    return historicoPresenca(s.alunoId, dias, await hoje(s))
   })
 
   const corpoGraduacao = z.object({

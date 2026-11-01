@@ -104,7 +104,9 @@ export function useSalvarAluno() {
   return useMutation({
     mutationFn: async (e: AlunoEdicao) => {
       const corpo = paraAlunoDto(e)
-      const r = e.aluno.id ? await api.patch<AlunoDto>(`/alunos/${e.aluno.id}`, corpo) : await api.post<AlunoDto>('/alunos', corpo)
+      const r = e.aluno.id
+        ? await api.patch<AlunoDto>(`/alunos/${e.aluno.id}`, corpo)
+        : await api.post<AlunoDto>('/alunos', corpo)
       return deAlunoDto(r)
     },
     // Presença, cobrança e métricas dependem do cadastro (turmas, plano, status).
@@ -128,7 +130,8 @@ export function useRemoverAluno() {
 export function useConvidarAluno() {
   const cliente = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, email }: { id: string; email?: string }) => api.post(`/alunos/${id}/acesso`, email ? { email } : {}),
+    mutationFn: ({ id, email }: { id: string; email?: string }) =>
+      api.post(`/alunos/${id}/acesso`, email ? { email } : {}),
     onSuccess: () => cliente.invalidateQueries({ queryKey: CHAVE_ALUNOS }),
   })
 }
@@ -175,7 +178,10 @@ export interface Cobranca extends Omit<CobrancaDto, 'valorCentavos'> {
   valor: number
 }
 
-export const deCobrancaDto = ({ valorCentavos, ...c }: CobrancaDto): Cobranca => ({ ...c, valor: paraReais(valorCentavos) })
+export const deCobrancaDto = ({ valorCentavos, ...c }: CobrancaDto): Cobranca => ({
+  ...c,
+  valor: paraReais(valorCentavos),
+})
 
 /** Cobranças do aluno (só o gestor). */
 export function useCobrancasAluno(id: string | undefined, habilitado: boolean) {

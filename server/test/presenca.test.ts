@@ -91,6 +91,23 @@ describe('check-in do aluno', () => {
     const aula = await aulaPorTitulo(aluno, 'Raspagens')
     expect((await chamar(amb, aluno, 'POST', `/aulas/${aula}/checkin`)).statusCode).toBe(403)
   })
+
+  it('o aluno lê só o próprio histórico de presença, com o check-in de hoje', async () => {
+    const aula = await aulaPorTitulo(aluno, 'Raspagens')
+    await chamar(amb, aluno, 'POST', `/aulas/${aula}/checkin`)
+
+    const r = await chamar(amb, aluno, 'GET', '/eu/presencas?dias=30')
+    expect(r.statusCode).toBe(200)
+    const hoje = r.json().itens.find((i: { data: string; aulaId: string }) => i.data === HOJE && i.aulaId === aula)
+    expect(hoje).toMatchObject({ situacao: 'presente', origem: 'aluno' })
+    // Igual ao que a equipe vê na ficha dele.
+    expect(r.json()).toEqual((await chamar(amb, prof, 'GET', `/alunos/${alunoId}/presencas?dias=30`)).json())
+
+    // Não há como pedir o de outro aluno: a rota da ficha é da equipe e /eu/ não recebe id.
+    const outro = (await amb.db.query('select id from aluno where id <> $1 limit 1', [alunoId])).rows[0].id
+    expect((await chamar(amb, aluno, 'GET', `/alunos/${outro}/presencas`)).statusCode).toBe(403)
+    expect((await chamar(amb, prof, 'GET', '/eu/presencas')).statusCode).toBe(403)
+  })
 })
 
 describe('chamada do professor', () => {

@@ -6,16 +6,17 @@ import { Button } from '@/components/ui/Button'
 import { Input, Select } from '@/components/ui/Field'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
-import { EmptyState, PageHeader } from '@/components/ui/Misc'
-import { useStore } from '@/app/store'
-import { TURMAS, turmaPorId } from '@/data/mock'
+import { Carregando, EmptyState, ErroCarga, PageHeader } from '@/components/ui/Misc'
+import { useAuth } from '@/app/auth'
+import { useAulas, useRemoverAula, useSalvarAula, useTurmas } from '@/api/turmas'
+import { mensagemDeErro } from '@/lib/api'
 import { DIAS_SEMANA, DIAS_SEMANA_LONGO } from '@/lib/format'
 import type { Aula, DiaSemana } from '@/types'
 import { cn } from '@/lib/cn'
 
 const VAZIA: Aula = {
   id: '',
-  turmaId: 't1',
+  turmaId: '',
   titulo: '',
   diaSemana: 1,
   inicio: '19:00',
@@ -25,7 +26,16 @@ const VAZIA: Aula = {
 }
 
 export function Agenda() {
-  const { aulas, salvarAula, removerAula } = useStore()
+  const { usuario } = useAuth()
+  // O quadro é visível a todos; só a equipe agenda, edita e remove aulas.
+  const podeEditar = usuario?.papel === 'gestor' || usuario?.papel === 'professor'
+  const consultaAulas = useAulas()
+  const consultaTurmas = useTurmas()
+  const salvar = useSalvarAula()
+  const remover = useRemoverAula()
+  const aulas = useMemo(() => consultaAulas.data ?? [], [consultaAulas.data])
+  const TURMAS = useMemo(() => (consultaTurmas.data ?? []).filter((t) => t.ativa !== false), [consultaTurmas.data])
+  const turmaPorId = (id: string) => consultaTurmas.data?.find((t) => t.id === id)
   const [visao, setVisao] = useState<'semana' | 'lista'>('semana')
   const [turmaFiltro, setTurmaFiltro] = useState('todas')
   const [aberto, setAberto] = useState(false)
@@ -50,17 +60,40 @@ export function Agenda() {
   const totalSemanal = filtradas.length
 
   const abrir = (a: Aula | null, dia?: DiaSemana) => {
-    setDados(a ?? { ...VAZIA, diaSemana: dia ?? 1 })
+    if (!podeEditar) return
+    setDados(a ?? { ...VAZIA, diaSemana: dia ?? 1, turmaId: TURMAS[0]?.id ?? '' })
     setErro('')
     setAberto(true)
   }
 
   const submeter = () => {
     if (dados.titulo.trim().length < 3) return setErro('Dê um nome à aula.')
+    if (!dados.turmaId) return setErro('Escolha a turma.')
     if (dados.fim <= dados.inicio) return setErro('O horário de término precisa ser depois do início.')
-    salvarAula(dados)
-    setAberto(false)
+    salvar.mutate(dados, { onSuccess: () => setAberto(false), onError: (e) => setErro(mensagemDeErro(e)) })
   }
+
+  const [erroLista, setErroLista] = useState('')
+  const removerAula = (id: string, aoConcluir?: () => void) => {
+    setErroLista('')
+    remover.mutate(id, {
+      onSuccess: aoConcluir,
+      onError: (e) => (aoConcluir ? setErro(mensagemDeErro(e)) : setErroLista(mensagemDeErro(e))),
+    })
+  }
+
+  const falha = consultaAulas.error ?? consultaTurmas.error
+  if (falha)
+    return (
+      <ErroCarga
+        mensagem={mensagemDeErro(falha)}
+        aoTentarDeNovo={() => {
+          consultaAulas.refetch()
+          consultaTurmas.refetch()
+        }}
+      />
+    )
+  if (consultaAulas.isPending || consultaTurmas.isPending) return <Carregando />
 
   return (
     <>
@@ -90,16 +123,32 @@ export function Agenda() {
                 </button>
               ))}
             </div>
-            <Button variante="primaria" onClick={() => abrir(null)}>
-              <Plus className="size-4" />
-              Agendar aula
-            </Button>
+            {podeEditar && (
+              <Button variante="primaria" onClick={() => abrir(null)}>
+                <Plus className="size-4" />
+                Agendar aula
+              </Button>
+            )}
           </>
         }
       />
 
+      {erroLista && (
+        <p
+          role="alert"
+          className="mb-4 rounded-md border border-rs-red-100 bg-rs-red-50 px-3 py-2 text-sm font-medium text-rs-red-700"
+        >
+          {erroLista}
+        </p>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Select value={turmaFiltro} onChange={(e) => setTurmaFiltro(e.target.value)} wrapClass="w-full sm:w-56" aria-label="Filtrar por turma">
+        <Select
+          value={turmaFiltro}
+          onChange={(e) => setTurmaFiltro(e.target.value)}
+          wrapClass="w-full sm:w-56"
+          aria-label="Filtrar por turma"
+        >
           <option value="todas">Todas as turmas</option>
           {TURMAS.map((t) => (
             <option key={t.id} value={t.id}>
@@ -141,16 +190,15 @@ export function Agenda() {
               </header>
 
               <ul className="flex-1 space-y-2 p-2.5">
-                {doDia.length === 0 && (
-                  <li className="px-1 py-3 text-center text-xs text-rs-gray-500">Sem aulas</li>
-                )}
+                {doDia.length === 0 && <li className="px-1 py-3 text-center text-xs text-rs-gray-500">Sem aulas</li>}
                 {doDia.map((aula) => {
                   const turma = turmaPorId(aula.turmaId)
                   return (
                     <li key={aula.id}>
                       <button
                         onClick={() => abrir(aula)}
-                        className="w-full cursor-pointer rounded-md border-l-[3px] bg-rs-gray-50 p-2.5 text-left transition-colors hover:bg-rs-blue-50"
+                        disabled={!podeEditar}
+                        className="w-full cursor-pointer rounded-md disabled:cursor-default border-l-[3px] bg-rs-gray-50 p-2.5 text-left transition-colors hover:bg-rs-blue-50"
                         style={{ borderLeftColor: turma?.cor }}
                       >
                         <span className="block font-mono text-xs font-bold text-rs-gray-700">
@@ -164,15 +212,17 @@ export function Agenda() {
                     </li>
                   )
                 })}
-                <li>
-                  <button
-                    onClick={() => abrir(null, dia as DiaSemana)}
-                    className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-dashed border-rs-gray-300 py-2 text-xs font-semibold text-rs-gray-500 transition-colors hover:border-rs-blue-300 hover:text-rs-blue-600"
-                  >
-                    <Plus className="size-3.5" />
-                    Adicionar
-                  </button>
-                </li>
+                {podeEditar && (
+                  <li>
+                    <button
+                      onClick={() => abrir(null, dia as DiaSemana)}
+                      className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-dashed border-rs-gray-300 py-2 text-xs font-semibold text-rs-gray-500 transition-colors hover:border-rs-blue-300 hover:text-rs-blue-600"
+                    >
+                      <Plus className="size-3.5" />
+                      Adicionar
+                    </button>
+                  </li>
+                )}
               </ul>
             </div>
           ))}
@@ -186,10 +236,12 @@ export function Agenda() {
               titulo="Nenhuma aula no quadro"
               mensagem="Comece montando o horário semanal da academia."
               acao={
-                <Button variante="secundaria" onClick={() => abrir(null)}>
-                  <Plus className="size-4" />
-                  Agendar aula
-                </Button>
+                podeEditar && (
+                  <Button variante="secundaria" onClick={() => abrir(null)}>
+                    <Plus className="size-4" />
+                    Agendar aula
+                  </Button>
+                )
               }
             />
           ) : (
@@ -221,7 +273,11 @@ export function Agenda() {
                             {aula.inicio}–{aula.fim}
                           </td>
                           <td className="px-5 py-3">
-                            <button onClick={() => abrir(aula)} className="cursor-pointer text-sm font-semibold text-rs-ink hover:text-rs-blue-600">
+                            <button
+                              onClick={() => abrir(aula)}
+                              disabled={!podeEditar}
+                              className="cursor-pointer text-sm font-semibold text-rs-ink hover:text-rs-blue-600 disabled:cursor-default disabled:hover:text-rs-ink"
+                            >
                               {aula.titulo}
                             </button>
                           </td>
@@ -234,13 +290,16 @@ export function Agenda() {
                           <td className="px-5 py-3 text-sm text-rs-gray-700">{aula.local}</td>
                           <td className="px-5 py-3 text-sm text-rs-gray-700">{aula.capacidade} vagas</td>
                           <td className="px-5 py-3 text-right">
-                            <button
-                              onClick={() => removerAula(aula.id)}
-                              aria-label={`Remover ${aula.titulo}`}
-                              className="cursor-pointer rounded-md p-2 text-rs-gray-500 opacity-0 transition-opacity hover:bg-rs-red-50 hover:text-rs-red-600 focus-visible:opacity-100 group-hover:opacity-100"
-                            >
-                              <Trash2 className="size-4" />
-                            </button>
+                            {podeEditar && (
+                              <button
+                                onClick={() => removerAula(aula.id)}
+                                disabled={remover.isPending}
+                                aria-label={`Remover ${aula.titulo}`}
+                                className="cursor-pointer rounded-md p-2 text-rs-gray-500 opacity-0 transition-opacity hover:bg-rs-red-50 hover:text-rs-red-600 focus-visible:opacity-100 group-hover:opacity-100"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       )
@@ -259,7 +318,11 @@ export function Agenda() {
           {TURMAS.map((t) => {
             const qtd = aulas.filter((a) => a.turmaId === t.id).length
             return (
-              <div key={t.id} className="rounded-md border-l-[3px] border border-rs-gray-200 p-4" style={{ borderLeftColor: t.cor }}>
+              <div
+                key={t.id}
+                className="rounded-md border-l-[3px] border border-rs-gray-200 p-4"
+                style={{ borderLeftColor: t.cor }}
+              >
                 <h3 className="rs-title text-base text-rs-ink">{t.nome}</h3>
                 <p className="mt-1 text-xs text-rs-gray-500">{t.professor}</p>
                 <ul className="mt-3 space-y-1 text-xs text-rs-gray-700">
@@ -273,12 +336,14 @@ export function Agenda() {
                     <MapPin className="size-3.5 text-rs-gray-500" /> {t.nivel}
                   </li>
                 </ul>
-                <Link
-                  to="/presenca"
-                  className="mt-3 inline-block text-xs font-semibold uppercase tracking-wider text-rs-blue-600 hover:underline"
-                >
-                  Ver presenças
-                </Link>
+                {podeEditar && (
+                  <Link
+                    to="/presenca"
+                    className="mt-3 inline-block text-xs font-semibold uppercase tracking-wider text-rs-blue-600 hover:underline"
+                  >
+                    Ver presenças
+                  </Link>
+                )}
               </div>
             )
           })}
@@ -290,7 +355,7 @@ export function Agenda() {
         aberto={aberto}
         aoFechar={() => setAberto(false)}
         titulo={dados.id ? 'Editar aula' : 'Agendar aula'}
-        descricao="A aula se repete toda semana no dia e horário definidos."
+        descricao="A aula se repete toda semana no dia e horário definidos. Remover uma aula que já teve presenças só a tira do quadro: o histórico continua valendo."
         largura="sm"
         rodape={
           <>
@@ -298,19 +363,17 @@ export function Agenda() {
               <Button
                 variante="perigo"
                 className="mr-auto"
-                onClick={() => {
-                  removerAula(dados.id)
-                  setAberto(false)
-                }}
+                disabled={remover.isPending}
+                onClick={() => removerAula(dados.id, () => setAberto(false))}
               >
-                Remover
+                {remover.isPending ? 'Removendo…' : 'Remover'}
               </Button>
             )}
             <Button variante="fantasma" onClick={() => setAberto(false)}>
               Cancelar
             </Button>
-            <Button variante="primaria" onClick={submeter}>
-              {dados.id ? 'Salvar' : 'Agendar'}
+            <Button variante="primaria" onClick={submeter} disabled={salvar.isPending}>
+              {salvar.isPending ? 'Salvando…' : dados.id ? 'Salvar' : 'Agendar'}
             </Button>
           </>
         }
@@ -323,7 +386,11 @@ export function Agenda() {
             placeholder="Ex.: Fundamentos de Guarda"
           />
           <div className="grid gap-4 sm:grid-cols-2">
-            <Select label="Turma" value={dados.turmaId} onChange={(e) => setDados({ ...dados, turmaId: e.target.value })}>
+            <Select
+              label="Turma"
+              value={dados.turmaId}
+              onChange={(e) => setDados({ ...dados, turmaId: e.target.value })}
+            >
               {TURMAS.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.nome}
@@ -341,8 +408,18 @@ export function Agenda() {
                 </option>
               ))}
             </Select>
-            <Input label="Início" type="time" value={dados.inicio} onChange={(e) => setDados({ ...dados, inicio: e.target.value })} />
-            <Input label="Término" type="time" value={dados.fim} onChange={(e) => setDados({ ...dados, fim: e.target.value })} />
+            <Input
+              label="Início"
+              type="time"
+              value={dados.inicio}
+              onChange={(e) => setDados({ ...dados, inicio: e.target.value })}
+            />
+            <Input
+              label="Término"
+              type="time"
+              value={dados.fim}
+              onChange={(e) => setDados({ ...dados, fim: e.target.value })}
+            />
             <Input
               label="Capacidade"
               type="number"
@@ -350,11 +427,19 @@ export function Agenda() {
               value={dados.capacidade}
               onChange={(e) => setDados({ ...dados, capacidade: Number(e.target.value) })}
             />
-            <Input label="Local" value={dados.local} onChange={(e) => setDados({ ...dados, local: e.target.value })} placeholder="Tatame 1" />
+            <Input
+              label="Local"
+              value={dados.local}
+              onChange={(e) => setDados({ ...dados, local: e.target.value })}
+              placeholder="Tatame 1"
+            />
           </div>
 
           {erro && (
-            <p role="alert" className="rounded-md border border-rs-red-100 bg-rs-red-50 px-3 py-2 text-sm font-medium text-rs-red-700">
+            <p
+              role="alert"
+              className="rounded-md border border-rs-red-100 bg-rs-red-50 px-3 py-2 text-sm font-medium text-rs-red-700"
+            >
               {erro}
             </p>
           )}
