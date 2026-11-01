@@ -27,7 +27,7 @@ Mudar uma delas é decisão do dono do produto. Estão detalhadas no `ROADMAP.md
 - Estado **em memória** (`app/src/app/store.tsx`): recarregar a página apaga tudo. Só a sessão de login fica no `localStorage`.
 - Trocar de usuário (Sair → entrar) **não** recarrega a página, então o estado se mantém. Útil para demonstrar aluno → professor.
 - `selectors.ts` lê dados simulados **fixos**, não o estado: o Painel e o campo "% em 30d" **não** reagem a check-ins. Isso some quando as métricas vierem do servidor.
-- O protótipo ainda carrega o modelo antigo (`store.fecharChamada`, `chamada.fechada`) que **não** deve ir para o back-end (defeito 10 do roadmap).
+- O modelo antigo de chamada fechada pelo professor (`fecharChamada`, `chamada.fechada`, defeito 10) foi removido do front. Não recriar.
 - O login só confere o e-mail. **Não é segurança.** A guarda por papel (`ExigePapel`) é só navegação.
 - Valores em **reais** no front; no banco são **centavos** (`integer`). A conversão é na camada de API.
 

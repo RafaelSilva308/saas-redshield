@@ -23,7 +23,7 @@ export const novasMatriculas = (mes = mesAtual) => ALUNOS.filter((a) => mesDe(a.
 export function taxaPresenca(dias = 30) {
   const limite = new Date(hoje)
   limite.setDate(limite.getDate() - dias)
-  const janela = CHAMADAS.filter((c) => new Date(c.data + 'T12:00:00') >= limite && c.fechada)
+  const janela = CHAMADAS.filter((c) => new Date(c.data + 'T12:00:00') >= limite)
   if (!janela.length) return 0
   const total = janela.reduce((s, c) => s + c.registros.length, 0)
   const presentes = janela.reduce((s, c) => s + c.registros.filter((r) => r.status === 'presente').length, 0)
@@ -70,7 +70,7 @@ export function seriePresenca() {
     ini.setDate(ini.getDate() - 7)
     const janela = CHAMADAS.filter((c) => {
       const d = new Date(c.data + 'T12:00:00')
-      return d > ini && d <= fim && c.fechada
+      return d > ini && d <= fim
     })
     const total = janela.reduce((s, c) => s + c.registros.length, 0)
     const presentes = janela.reduce((s, c) => s + c.registros.filter((r) => r.status === 'presente').length, 0)
@@ -105,7 +105,7 @@ export function ocupacaoTurmas() {
   return TURMAS.map((turma) => {
     const aulasDaTurma = AULAS.filter((a) => a.turmaId === turma.id)
     const ids = new Set(aulasDaTurma.map((a) => a.id))
-    const chamadas = CHAMADAS.filter((c) => ids.has(c.aulaId) && new Date(c.data + 'T12:00:00') >= limite && c.fechada)
+    const chamadas = CHAMADAS.filter((c) => ids.has(c.aulaId) && new Date(c.data + 'T12:00:00') >= limite)
     const capacidadeMedia = aulasDaTurma.reduce((s, a) => s + a.capacidade, 0) / (aulasDaTurma.length || 1)
     const mediaPresentes = chamadas.length
       ? chamadas.reduce((s, c) => s + c.registros.filter((r) => r.status === 'presente').length, 0) / chamadas.length

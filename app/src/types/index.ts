@@ -91,7 +91,6 @@ export interface ChamadaAula {
   aulaId: string
   data: string // ISO date
   registros: RegistroPresenca[]
-  fechada: boolean
 }
 
 export type TipoTransacao = 'receita' | 'despesa'

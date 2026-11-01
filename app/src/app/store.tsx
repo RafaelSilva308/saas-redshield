@@ -26,12 +26,11 @@ interface Store {
   removerAula: (id: string) => void
 
   marcarPresenca: (aulaId: string, data: string, alunoId: string, status: StatusPresenca) => void
-  fecharChamada: (aulaId: string, data: string) => void
   chamadaDe: (aulaId: string, data: string) => ChamadaAula | undefined
 
   /** O próprio aluno registra presença na aula de hoje. Vale na hora, sem confirmação do professor. */
   fazerCheckin: (aulaId: string, alunoId: string) => ResultadoCheckin
-  /** O aluno desfaz o próprio check-in enquanto a chamada estiver aberta. */
+  /** O aluno desfaz o próprio check-in (só o que ele mesmo registrou). */
   desfazerCheckin: (aulaId: string, alunoId: string) => ResultadoCheckin
 
   salvarTransacao: (t: Transacao) => void
@@ -88,7 +87,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setChamadas((atual) => {
         const idx = atual.findIndex((c) => c.aulaId === aulaId && c.data === data)
         if (idx === -1) {
-          return [...atual, { id: `ch-${data}-${aulaId}`, aulaId, data, registros: [registro], fechada: false }]
+          return [...atual, { id: `ch-${data}-${aulaId}`, aulaId, data, registros: [registro] }]
         }
         const alvo = atual[idx]
         const existe = alvo.registros.some((r) => r.alunoId === alunoId)
@@ -108,12 +107,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       gravarRegistro(aulaId, data, alunoId, status, 'professor'),
     [gravarRegistro],
   )
-
-  const fecharChamada = useCallback((aulaId: string, data: string) => {
-    setChamadas((atual) =>
-      atual.map((c) => (c.aulaId === aulaId && c.data === data ? { ...c, fechada: true } : c)),
-    )
-  }, [])
 
   const salvarTransacao = useCallback((t: Transacao) => {
     setTransacoes((atual) => {
@@ -137,7 +130,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!alunoNaAula(aluno, aula)) return { ok: false, erro: 'Você não está matriculado nessa turma.' }
 
       const chamada = chamadas.find((c) => c.aulaId === aulaId && c.data === data)
-      if (chamada?.fechada) return { ok: false, erro: 'A chamada desta aula já foi encerrada pelo professor.' }
 
       const existente = chamada?.registros.find((r) => r.alunoId === alunoId)
       if (existente?.status === 'presente') return { ok: true } // já registrado: repetir é inofensivo
@@ -156,7 +148,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const registro = chamada?.registros.find((r) => r.alunoId === alunoId)
       if (!chamada || !registro) return { ok: false, erro: 'Não há check-in para desfazer.' }
       if (registro.origem !== 'aluno') return { ok: false, erro: 'Esse registro foi feito pelo professor.' }
-      if (chamada.fechada) return { ok: false, erro: 'A chamada já foi encerrada pelo professor.' }
 
       setChamadas((atual) =>
         atual.map((c) =>
@@ -177,12 +168,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     () => ({
       alunos, planos, aulas, chamadas, transacoes,
       salvarAluno, removerAluno, salvarPlano, alternarPlano, salvarAula, removerAula,
-      marcarPresenca, fecharChamada, chamadaDe, fazerCheckin, desfazerCheckin, salvarTransacao, removerTransacao,
+      marcarPresenca, chamadaDe, fazerCheckin, desfazerCheckin, salvarTransacao, removerTransacao,
     }),
     [
       alunos, planos, aulas, chamadas, transacoes,
       salvarAluno, removerAluno, salvarPlano, alternarPlano, salvarAula, removerAula,
-      marcarPresenca, fecharChamada, chamadaDe, fazerCheckin, desfazerCheckin, salvarTransacao, removerTransacao,
+      marcarPresenca, chamadaDe, fazerCheckin, desfazerCheckin, salvarTransacao, removerTransacao,
     ],
   )
 

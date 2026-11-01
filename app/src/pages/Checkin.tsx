@@ -93,7 +93,6 @@ export function Checkin() {
           {aulasDeHoje.map((aula) => {
             const chamada = chamadaDe(aula.id, hoje)
             const registro = chamada?.registros.find((r) => r.alunoId === aluno.id)
-            const encerrada = chamada?.fechada ?? false
             const feitoPeloAluno = registro?.origem === 'aluno'
 
             return (
@@ -114,7 +113,7 @@ export function Checkin() {
                     </div>
 
                     <div className="mt-auto">
-                      {!registro && !encerrada && (
+                      {!registro && (
                         <Button
                           variante="primaria"
                           tamanho="lg"
@@ -124,12 +123,6 @@ export function Checkin() {
                           <Check className="size-5" />
                           Fazer check-in
                         </Button>
-                      )}
-
-                      {!registro && encerrada && (
-                        <Badge tom="neutro">
-                          <Lock className="size-3.5" /> Chamada encerrada
-                        </Badge>
                       )}
 
                       {registro && (
@@ -144,7 +137,7 @@ export function Checkin() {
                                 ? 'Falta justificada pelo professor'
                                 : 'Falta registrada pelo professor'}
                           </Badge>
-                          {feitoPeloAluno && !encerrada && (
+                          {feitoPeloAluno && (
                             <Button variante="fantasma" tamanho="sm" onClick={() => agir(desfazerCheckin(aula.id, aluno.id))}>
                               <Undo2 className="size-4" />
                               Desfazer

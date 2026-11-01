@@ -195,7 +195,6 @@ export const CHAMADAS: ChamadaAula[] = (() => {
         aulaId: aula.id,
         data: isoDia(data),
         registros,
-        fechada: d > 0,
       })
     }
   }
