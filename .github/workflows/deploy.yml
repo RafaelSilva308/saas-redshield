@@ -1,8 +1,8 @@
-name: Deploy no GitHub Pages
+name: Deploy no GitHub Pages (protótipo congelado)
 
 on:
   push:
-    branches: [main]
+    branches: [prototipo]
   workflow_dispatch:
 
 permissions:
