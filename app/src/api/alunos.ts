@@ -191,3 +191,17 @@ export function useCobrancasAluno(id: string | undefined, habilitado: boolean) {
     enabled: !!id && habilitado,
   })
 }
+
+/** Registra uma graduação; o banco atualiza faixa e graus do aluno na mesma transação. */
+export function useGraduar() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, faixa, graus }: { id: string; faixa: Faixa; graus: number }) =>
+      api.post(`/alunos/${id}/graduacoes`, { faixa, graus }),
+    onSuccess: () =>
+      Promise.all([
+        cliente.invalidateQueries({ queryKey: CHAVE_ALUNOS }),
+        cliente.invalidateQueries({ queryKey: ['metricas'] }),
+      ]),
+  })
+}

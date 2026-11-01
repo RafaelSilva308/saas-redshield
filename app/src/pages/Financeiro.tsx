@@ -216,7 +216,7 @@ function Lancamentos({ mes }: { mes: string }) {
                     axisLine={false}
                     width={52}
                     tick={{ fontSize: 12, fill: '#667085' }}
-                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                    tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
                   />
                   <Tooltip
                     formatter={(v) => brl(Number(v))}

@@ -169,7 +169,7 @@ export function useAcoesCobranca() {
 
 // ---------------------------------------------------------------- gráfico
 
-export function useSerieFinanceira(meses = 6) {
+export function useSerieFinanceira(meses = 6, habilitado = true) {
   return useQuery({
     queryKey: ['metricas', 'financeiro', meses],
     queryFn: async () =>
@@ -183,5 +183,6 @@ export function useSerieFinanceira(meses = 6) {
         despesa: paraReais(m.despesaCentavos),
         resultado: paraReais(m.resultadoCentavos),
       })),
+    enabled: habilitado,
   })
 }
