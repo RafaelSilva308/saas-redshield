@@ -76,6 +76,8 @@ Encontrados lendo o código. Cada um já tem destino no roteiro abaixo.
 | 9 | **Os indicadores do Painel não reagem a ações feitas no sistema.** Os cálculos (`selectors.ts`) leem os dados simulados fixos, não o estado: um check-in aparece na chamada e na ficha, mas não muda "Presença 30 dias" | `data/selectors.ts` | Só é perceptível no protótipo; some quando as métricas vierem do servidor | Fase 6 |
 | 10 | **O front ainda carrega o modelo antigo de chamada fechada pelo professor** (`store.fecharChamada`, `chamada.fechada`), que não cabe em D1–D3. A tela não oferece mais esses botões, mas o código e os dados simulados continuam | `store.tsx`, `data/mock.ts`, `types/index.ts` | O back-end não deve implementar "fechar chamada" | Fase 1 e Fase 4 |
 
+**Situação em 2026-10-31** (front ligado à API, branch `feat/front-api`): 1, 3, 4, 5, 7, 8, 9 e 10 estão resolvidos (servidor + telas). O 6 está resolvido (esqueci a senha, Configurações e Equipe sem botões falsos). O 2 segue dependendo de E1: a API usa uma regra provisória e a tela avisa isso. Detalhes em `PROGRESSO.md`.
+
 ---
 
 ## 2. Pendências de decisão

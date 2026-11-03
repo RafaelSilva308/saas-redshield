@@ -1,47 +1,82 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, CalendarDays, CreditCard, Mail, Pencil, Phone, TrendingUp, User } from 'lucide-react'
+import { ArrowLeft, CalendarDays, CreditCard, Mail, Pencil, Phone, Send, TrendingUp, User } from 'lucide-react'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge, FaixaBadge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
-import { EmptyState, Progress, Tabs } from '@/components/ui/Misc'
+import { Carregando, EmptyState, ErroCarga, Progress, Tabs } from '@/components/ui/Misc'
 import { FormularioAluno } from './alunos/FormularioAluno'
-import { useStore } from '@/app/store'
-import { aulaPorId, turmaPorId } from '@/data/mock'
+import { useAuth } from '@/app/auth'
+import {
+  useAluno,
+  useCobrancasAluno,
+  useConvidarAluno,
+  usePresencasAluno,
+  type PresencaAluno,
+  type SituacaoCobranca,
+} from '@/api/alunos'
+import { usePlanos } from '@/api/planos'
+import { useAulas, useTurmas } from '@/api/turmas'
+import { DadosPessoais } from './alunos/DadosPessoais'
+import { ErroApi, mensagemDeErro } from '@/lib/api'
 import { FAIXAS, STATUS_ALUNO, STATUS_PAGAMENTO, brl, dataCurta, dataLonga, idade } from '@/lib/format'
 import type { Faixa } from '@/types'
 
 const ORDEM_FAIXAS: Faixa[] = ['branca', 'azul', 'roxa', 'marrom', 'preta']
 
+/** Rótulo e tom de cada situação de presença. Aula realizada sem registro é falta (D2). */
+const SITUACAO: Record<PresencaAluno['situacao'], { label: string; tom: 'ok' | 'alerta' | 'neutro' }> = {
+  presente: { label: 'Presente', tom: 'ok' },
+  justificado: { label: 'Justificado', tom: 'alerta' },
+  ausente: { label: 'Falta', tom: 'neutro' },
+  sem_checkin: { label: 'Falta · sem check-in', tom: 'neutro' },
+}
+
+const COBRANCA: Record<SituacaoCobranca, { label: string; tom: 'ok' | 'alerta' | 'urgente' | 'neutro' }> = {
+  paga: { label: 'Paga', tom: 'ok' },
+  aberta: { label: 'Em aberto', tom: 'alerta' },
+  atrasada: { label: 'Atrasada', tom: 'urgente' },
+  cancelada: { label: 'Cancelada', tom: 'neutro' },
+}
+
+const horaDe = (iso: string) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
 export function AlunoDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { alunos, planos, chamadas, transacoes } = useStore()
+  const { usuario } = useAuth()
+  const ehGestor = usuario?.papel === 'gestor'
   const [aba, setAba] = useState<'resumo' | 'presenca' | 'financeiro'>('resumo')
   const [editando, setEditando] = useState(false)
+  const [aviso, setAviso] = useState<{ tom: 'ok' | 'erro'; texto: string } | null>(null)
 
-  const aluno = alunos.find((a) => a.id === id)
+  const consulta = useAluno(id)
+  const planos = usePlanos().data ?? []
+  const dadosTurmas = useTurmas().data
+  const dadosAulas = useAulas().data
+  const turmas = useMemo(() => dadosTurmas ?? [], [dadosTurmas])
+  const aulas = useMemo(() => dadosAulas ?? [], [dadosAulas])
+  const presencas = usePresencasAluno(id)
+  const cobrancas = useCobrancasAluno(id, ehGestor)
+  const convidar = useConvidarAluno()
+  const aluno = consulta.data
 
-  const historico = useMemo(() => {
-    if (!aluno) return []
-    return chamadas
-      .filter((c) => c.registros.some((r) => r.alunoId === aluno.id))
-      .map((c) => ({
-        data: c.data,
-        aula: aulaPorId(c.aulaId),
-        status: c.registros.find((r) => r.alunoId === aluno.id)!.status,
-        origem: c.registros.find((r) => r.alunoId === aluno.id)!.origem,
-        horario: c.registros.find((r) => r.alunoId === aluno.id)!.horario,
-      }))
-      .sort((a, b) => b.data.localeCompare(a.data))
-      .slice(0, 30)
-  }, [aluno, chamadas])
-
-  const pagamentos = useMemo(
-    () => (aluno ? transacoes.filter((t) => t.alunoId === aluno.id).slice(0, 12) : []),
-    [aluno, transacoes],
+  const historico = useMemo(
+    () =>
+      (presencas.data ?? []).map((p) => {
+        const aula = aulas.find((a) => a.id === p.aulaId)
+        return { ...p, turma: turmas.find((t) => t.id === aula?.turmaId)?.nome ?? '' }
+      }),
+    [presencas.data, aulas, turmas],
   )
+  const pagamentos = cobrancas.data ?? []
+
+  if (consulta.isPending) return <Carregando />
+  const naoExiste =
+    consulta.error instanceof ErroApi && (consulta.error.status === 404 || consulta.error.status === 400)
+  if (consulta.isError && !naoExiste)
+    return <ErroCarga mensagem={mensagemDeErro(consulta.error)} aoTentarDeNovo={() => consulta.refetch()} />
 
   if (!aluno) {
     return (
@@ -65,7 +100,19 @@ export function AlunoDetalhe() {
   const idxFaixa = ORDEM_FAIXAS.indexOf(aluno.faixa)
   const proximaFaixa = idxFaixa >= 0 && idxFaixa < ORDEM_FAIXAS.length - 1 ? ORDEM_FAIXAS[idxFaixa + 1] : null
   const progressoGraduacao = Math.min(100, (aluno.graus / 4) * 100)
-  const presentes = historico.filter((h) => h.status === 'presente').length
+  const presentes = historico.filter((h) => h.situacao === 'presente').length
+  const turmasDoAluno = turmas.filter((t) => aluno.turmaIds.includes(t.id))
+
+  const enviarConvite = () => {
+    setAviso(null)
+    convidar.mutate(
+      { id: aluno.id },
+      {
+        onSuccess: () => setAviso({ tom: 'ok', texto: `Convite enviado para ${aluno.email}. O link vale por 7 dias.` }),
+        onError: (e) => setAviso({ tom: 'erro', texto: mensagemDeErro(e) }),
+      },
+    )
+  }
 
   return (
     <>
@@ -89,15 +136,21 @@ export function AlunoDetalhe() {
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-rs-gray-500">
               <FaixaBadge faixa={aluno.faixa} graus={aluno.graus} />
-              <span className="inline-flex items-center gap-1.5">
-                <Mail className="size-4" /> {aluno.email}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Phone className="size-4" /> {aluno.telefone}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <CalendarDays className="size-4" /> {idade(aluno.nascimento)} anos
-              </span>
+              {aluno.email && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Mail className="size-4" /> {aluno.email}
+                </span>
+              )}
+              {aluno.telefone && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Phone className="size-4" /> {aluno.telefone}
+                </span>
+              )}
+              {aluno.nascimento && (
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarDays className="size-4" /> {idade(aluno.nascimento)} anos
+                </span>
+              )}
             </div>
             {aluno.responsavel?.nome && (
               <p className="mt-2 text-sm text-rs-gray-500">
@@ -105,12 +158,52 @@ export function AlunoDetalhe() {
                 {aluno.responsavel.telefone}
               </p>
             )}
+            <p className="mt-2 text-sm text-rs-gray-500">
+              Turmas:{' '}
+              <span className="font-semibold text-rs-gray-700">
+                {turmasDoAluno.length
+                  ? turmasDoAluno.map((t) => t.nome).join(', ')
+                  : 'nenhuma (não aparece na presença)'}
+              </span>
+              {' · '}
+              {aluno.temAcesso ? 'tem acesso ao sistema' : 'sem acesso ao sistema'}
+            </p>
           </div>
-          <Button variante="secundaria" onClick={() => setEditando(true)}>
-            <Pencil className="size-4" />
-            Editar cadastro
-          </Button>
+          {aluno.anonimizado ? (
+            <Badge tom="neutro">Cadastro anonimizado (LGPD) · não pode ser alterado</Badge>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {!aluno.temAcesso && aluno.status !== 'inativo' && (
+                <Button
+                  variante="contorno"
+                  onClick={enviarConvite}
+                  disabled={convidar.isPending || !aluno.email}
+                  title={aluno.email ? undefined : 'Cadastre um e-mail para enviar o convite.'}
+                >
+                  <Send className="size-4" />
+                  {convidar.isPending ? 'Enviando…' : 'Convidar para o sistema'}
+                </Button>
+              )}
+              <Button variante="secundaria" onClick={() => setEditando(true)}>
+                <Pencil className="size-4" />
+                Editar cadastro
+              </Button>
+            </div>
+          )}
         </div>
+
+        {aviso && (
+          <p
+            role={aviso.tom === 'erro' ? 'alert' : 'status'}
+            className={
+              aviso.tom === 'erro'
+                ? 'border-t border-rs-red-100 bg-rs-red-50 px-6 py-3 text-sm font-medium text-rs-red-700'
+                : 'border-t border-rs-gray-200 bg-rs-gray-50 px-6 py-3 text-sm text-rs-gray-700'
+            }
+          >
+            {aviso.texto}
+          </p>
+        )}
 
         {aluno.observacoes && (
           <div className="border-t border-rs-gray-200 bg-rs-warn-bg px-6 py-3">
@@ -124,7 +217,7 @@ export function AlunoDetalhe() {
       <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: 'Frequência (30 dias)', valor: `${aluno.frequencia30d}%`, Icone: TrendingUp },
-          { label: 'Presenças registradas', valor: presentes, Icone: CalendarDays },
+          { label: 'Presenças (90 dias)', valor: presentes, Icone: CalendarDays },
           { label: 'Plano', valor: plano?.nome ?? '—', nota: plano ? brl(plano.valor) : undefined, Icone: CreditCard },
           { label: 'Aluno desde', valor: dataCurta(aluno.matriculaEm), Icone: User },
         ].map(({ label, valor, nota, Icone }) => (
@@ -148,7 +241,8 @@ export function AlunoDetalhe() {
           itens={[
             { id: 'resumo', label: 'Resumo' },
             { id: 'presenca', label: 'Presença', contagem: historico.length },
-            { id: 'financeiro', label: 'Financeiro', contagem: pagamentos.length },
+            // Cobranças são só do gestor (a API recusa para o professor).
+            ...(ehGestor ? [{ id: 'financeiro' as const, label: 'Financeiro', contagem: pagamentos.length }] : []),
           ]}
         />
       </div>
@@ -180,7 +274,11 @@ export function AlunoDetalhe() {
                   <span className="text-sm font-semibold text-rs-gray-700">Graus na faixa atual</span>
                   <span className="text-sm text-rs-gray-500">{aluno.graus} de 4</span>
                 </div>
-                <Progress valor={progressoGraduacao} cor={FAIXAS[aluno.faixa].cor === '#e4e8ed' ? '#667085' : FAIXAS[aluno.faixa].cor} altura="h-3" />
+                <Progress
+                  valor={progressoGraduacao}
+                  cor={FAIXAS[aluno.faixa].cor === '#e4e8ed' ? '#667085' : FAIXAS[aluno.faixa].cor}
+                  altura="h-3"
+                />
               </div>
 
               <div className="rounded-md border border-rs-blue-100 bg-rs-blue-50 p-4">
@@ -195,8 +293,12 @@ export function AlunoDetalhe() {
           </Card>
 
           <Card>
-            <CardHeader titulo="Últimos treinos" descricao="Presenças mais recentes" />
-            {historico.length === 0 ? (
+            <CardHeader titulo="Últimos treinos" descricao="Aulas mais recentes das turmas do aluno" />
+            {presencas.isError ? (
+              <ErroCarga mensagem={mensagemDeErro(presencas.error)} aoTentarDeNovo={() => presencas.refetch()} />
+            ) : presencas.isPending ? (
+              <Carregando />
+            ) : historico.length === 0 ? (
               <EmptyState
                 icone={<CalendarDays className="size-6" />}
                 titulo="Nenhum treino registrado"
@@ -204,19 +306,18 @@ export function AlunoDetalhe() {
               />
             ) : (
               <ul className="divide-y divide-rs-gray-200">
-                {historico.slice(0, 8).map((h, i) => (
-                  <li key={`${h.data}-${i}`} className="flex items-center gap-4 px-5 py-3">
+                {historico.slice(0, 8).map((h) => (
+                  <li key={`${h.data}-${h.aulaId}`} className="flex items-center gap-4 px-5 py-3">
                     <span className="w-16 shrink-0 text-xs font-semibold text-rs-gray-500">{dataCurta(h.data)}</span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-rs-ink">{h.aula?.titulo}</span>
+                      <span className="block truncate text-sm font-semibold text-rs-ink">{h.titulo}</span>
                       <span className="block text-xs text-rs-gray-500">
-                        {turmaPorId(h.aula?.turmaId ?? '')?.nome} · {h.aula?.inicio}
+                        {h.turma && `${h.turma} · `}
+                        {h.inicio}
                         {h.origem === 'aluno' && ' · check-in do aluno'}
                       </span>
                     </span>
-                    <Badge tom={h.status === 'presente' ? 'ok' : h.status === 'justificado' ? 'alerta' : 'neutro'}>
-                      {h.status === 'presente' ? 'Presente' : h.status === 'justificado' ? 'Justificado' : 'Falta'}
-                    </Badge>
+                    <Badge tom={SITUACAO[h.situacao].tom}>{SITUACAO[h.situacao].label}</Badge>
                   </li>
                 ))}
               </ul>
@@ -227,9 +328,17 @@ export function AlunoDetalhe() {
 
       {aba === 'presenca' && (
         <Card>
-          <CardHeader titulo="Histórico de presença" descricao="Últimos 30 registros" />
-          {historico.length === 0 ? (
-            <EmptyState icone={<CalendarDays className="size-6" />} titulo="Sem registros" mensagem="Nenhum check-in ou registro do professor para este aluno ainda." />
+          <CardHeader titulo="Histórico de presença" descricao="Aulas das turmas do aluno nos últimos 90 dias" />
+          {presencas.isError ? (
+            <ErroCarga mensagem={mensagemDeErro(presencas.error)} aoTentarDeNovo={() => presencas.refetch()} />
+          ) : presencas.isPending ? (
+            <Carregando />
+          ) : historico.length === 0 ? (
+            <EmptyState
+              icone={<CalendarDays className="size-6" />}
+              titulo="Sem registros"
+              mensagem="Nenhuma aula das turmas deste aluno nos últimos 90 dias."
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-left">
@@ -243,19 +352,21 @@ export function AlunoDetalhe() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-rs-gray-200">
-                  {historico.map((h, i) => (
-                    <tr key={`${h.data}-${i}`} className="hover:bg-rs-gray-50">
+                  {historico.map((h) => (
+                    <tr key={`${h.data}-${h.aulaId}`} className="hover:bg-rs-gray-50">
                       <td className="px-5 py-3 text-sm text-rs-gray-700">{dataLonga(h.data)}</td>
-                      <td className="px-5 py-3 text-sm font-semibold text-rs-ink">{h.aula?.titulo}</td>
-                      <td className="px-5 py-3 text-sm text-rs-gray-700">{turmaPorId(h.aula?.turmaId ?? '')?.nome}</td>
-                      <td className="px-5 py-3 font-mono text-sm text-rs-gray-700">{h.aula?.inicio}</td>
+                      <td className="px-5 py-3 text-sm font-semibold text-rs-ink">{h.titulo}</td>
+                      <td className="px-5 py-3 text-sm text-rs-gray-700">{h.turma}</td>
+                      <td className="px-5 py-3 font-mono text-sm text-rs-gray-700">{h.inicio}</td>
                       <td className="px-5 py-3">
-                        <Badge tom={h.status === 'presente' ? 'ok' : h.status === 'justificado' ? 'alerta' : 'neutro'}>
-                          {h.status === 'presente' ? 'Presente' : h.status === 'justificado' ? 'Justificado' : 'Falta'}
-                        </Badge>
+                        <Badge tom={SITUACAO[h.situacao].tom}>{SITUACAO[h.situacao].label}</Badge>
                       </td>
                       <td className="px-5 py-3 text-sm text-rs-gray-700">
-                        {h.origem === 'aluno' ? `Check-in do aluno${h.horario ? ` · ${h.horario}` : ''}` : 'Chamada do professor'}
+                        {h.origem === 'aluno'
+                          ? `Check-in do aluno${h.registradoEm ? ` · ${horaDe(h.registradoEm)}` : ''}`
+                          : h.origem === 'professor'
+                            ? 'Professor'
+                            : '—'}
                       </td>
                     </tr>
                   ))}
@@ -266,20 +377,28 @@ export function AlunoDetalhe() {
         </Card>
       )}
 
-      {aba === 'financeiro' && (
+      {aba === 'financeiro' && ehGestor && (
         <Card>
           <CardHeader
-            titulo="Pagamentos"
+            titulo="Cobranças"
             descricao={`Plano ${plano?.nome ?? '—'} · vencimento dia ${aluno.vencimentoDia}`}
           />
-          {pagamentos.length === 0 ? (
-            <EmptyState icone={<CreditCard className="size-6" />} titulo="Sem lançamentos" mensagem="Nenhum pagamento registrado para este aluno." />
+          {cobrancas.isError ? (
+            <ErroCarga mensagem={mensagemDeErro(cobrancas.error)} aoTentarDeNovo={() => cobrancas.refetch()} />
+          ) : cobrancas.isPending ? (
+            <Carregando />
+          ) : pagamentos.length === 0 ? (
+            <EmptyState
+              icone={<CreditCard className="size-6" />}
+              titulo="Sem cobranças"
+              mensagem="Nenhuma cobrança gerada para este aluno."
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-left">
                 <thead>
                   <tr className="border-b border-rs-gray-200">
-                    {['Data', 'Descrição', 'Método', 'Valor', 'Situação'].map((h) => (
+                    {['Competência', 'Vencimento', 'Valor', 'Situação', 'Pago em'].map((h) => (
                       <th key={h} className="rs-label px-5 py-3">
                         {h}
                       </th>
@@ -287,15 +406,20 @@ export function AlunoDetalhe() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-rs-gray-200">
-                  {pagamentos.map((t) => (
-                    <tr key={t.id} className="hover:bg-rs-gray-50">
-                      <td className="px-5 py-3 text-sm text-rs-gray-700">{dataCurta(t.data)}</td>
-                      <td className="px-5 py-3 text-sm font-semibold text-rs-ink">{t.descricao}</td>
-                      <td className="px-5 py-3 text-sm capitalize text-rs-gray-700">{t.metodo}</td>
-                      <td className="px-5 py-3 text-sm font-bold text-rs-ink">{brl(t.valor)}</td>
-                      <td className="px-5 py-3">
-                        <Badge tom={t.conciliada ? 'ok' : 'alerta'}>{t.conciliada ? 'Conciliado' : 'A conferir'}</Badge>
+                  {pagamentos.map((c) => (
+                    <tr key={c.id} className="hover:bg-rs-gray-50">
+                      <td className="px-5 py-3 text-sm font-semibold text-rs-ink">
+                        {c.competencia.slice(5, 7)}/{c.competencia.slice(0, 4)}
                       </td>
+                      <td className="px-5 py-3 text-sm text-rs-gray-700">{dataCurta(c.vencimento)}</td>
+                      <td className="px-5 py-3 text-sm font-bold text-rs-ink">{brl(c.valor)}</td>
+                      <td className="px-5 py-3">
+                        <Badge tom={COBRANCA[c.situacao].tom}>
+                          {COBRANCA[c.situacao].label}
+                          {c.diasAtraso > 0 && ` · ${c.diasAtraso} dia${c.diasAtraso > 1 ? 's' : ''}`}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-3 text-sm text-rs-gray-700">{c.pagoEm ? dataCurta(c.pagoEm) : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -304,6 +428,8 @@ export function AlunoDetalhe() {
           )}
         </Card>
       )}
+
+      {ehGestor && <DadosPessoais id={aluno.id} nome={aluno.nome} anonimizado={aluno.anonimizado} />}
 
       <FormularioAluno aberto={editando} aluno={aluno} aoFechar={() => setEditando(false)} />
     </>

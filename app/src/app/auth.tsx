@@ -1,57 +1,90 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
-import { USUARIOS } from '@/data/mock'
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { api, ErroApi, mensagemDeErro, quandoPerderSessao } from '@/lib/api'
+import { Carregando, ErroCarga } from '@/components/ui/Misc'
 import type { Papel, Usuario } from '@/types'
 
-/* Autenticação SIMULADA — só para exercitar o controle de acesso do front.
-   Na Fase 2 isto vira: POST /auth/login, token em cookie httpOnly e refresh.
-   Nenhuma decisão de segurança real depende deste arquivo. */
+/* Sessão real: POST /auth/login grava o cookie httpOnly `rs.sid`; GET /auth/eu diz quem está logado.
+   O front não guarda token nem usuário no navegador. A autorização de verdade é da API;
+   `podeVer` só decide navegação. */
 
-const CHAVE = 'redshield.sessao'
+const CHAVE_EU = ['auth', 'eu'] as const
+/** Chave do login simulado do protótipo. Apagada para não deixar usuário antigo no navegador. */
+const CHAVE_ANTIGA = 'redshield.sessao'
 
 interface Ctx {
   usuario: Usuario | null
-  entrar: (email: string, senha: string) => { ok: boolean; erro?: string }
-  sair: () => void
+  entrar: (email: string, senha: string) => Promise<{ ok: boolean; erro?: string }>
+  sair: () => Promise<void>
   podeVer: (papeis: Papel[]) => boolean
 }
 
 const AuthCtx = createContext<Ctx | null>(null)
 
+async function buscarEu(): Promise<Usuario | null> {
+  try {
+    const { usuario } = await api.get<{ usuario: Usuario }>('/auth/eu')
+    return usuario
+  } catch (e) {
+    if (e instanceof ErroApi && e.status === 401) return null
+    throw e
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [usuario, setUsuario] = useState<Usuario | null>(() => {
-    try {
-      const bruto = localStorage.getItem(CHAVE)
-      return bruto ? (JSON.parse(bruto) as Usuario) : null
-    } catch {
-      return null
-    }
-  })
+  const cliente = useQueryClient()
+  const eu = useQuery({ queryKey: CHAVE_EU, queryFn: buscarEu, staleTime: Infinity, retry: false })
+  const usuario = eu.data ?? null
 
-  const entrar = useCallback((email: string, senha: string) => {
-    const achado = USUARIOS.find((u) => u.email.toLowerCase() === email.trim().toLowerCase())
-    if (!achado) return { ok: false, erro: 'Não encontramos esse e-mail. Confira e tente novamente.' }
-    if (senha.length < 4) return { ok: false, erro: 'A senha precisa ter ao menos 4 caracteres.' }
-    setUsuario(achado)
+  /** Troca de usuário: nada do cache do anterior pode aparecer para o próximo. */
+  const definirUsuario = useCallback(
+    (u: Usuario | null) => {
+      cliente.removeQueries({ predicate: (q) => q.queryKey[0] !== 'auth' })
+      cliente.setQueryData(CHAVE_EU, u)
+    },
+    [cliente],
+  )
+
+  useEffect(() => {
     try {
-      localStorage.setItem(CHAVE, JSON.stringify(achado))
+      localStorage.removeItem(CHAVE_ANTIGA)
     } catch {
-      /* ambiente sem storage: a sessão vive só na memória */
+      /* ambiente sem storage */
     }
-    return { ok: true }
   }, [])
 
-  const sair = useCallback(() => {
-    setUsuario(null)
+  // Sessão expirada ou encerrada em outro aparelho: qualquer 401 devolve para a tela de entrada.
+  useEffect(() => quandoPerderSessao(() => definirUsuario(null)), [definirUsuario])
+
+  const entrar = useCallback(
+    async (email: string, senha: string) => {
+      try {
+        const { usuario: u } = await api.post<{ usuario: Usuario }>('/auth/login', { email: email.trim(), senha })
+        definirUsuario(u)
+        return { ok: true }
+      } catch (e) {
+        return { ok: false, erro: mensagemDeErro(e) }
+      }
+    },
+    [definirUsuario],
+  )
+
+  const sair = useCallback(async () => {
     try {
-      localStorage.removeItem(CHAVE)
+      await api.post('/auth/logout')
     } catch {
-      /* nada a limpar */
+      /* sem conexão: sai daqui mesmo assim; a sessão no servidor expira sozinha */
     }
-  }, [])
+    definirUsuario(null)
+  }, [definirUsuario])
 
   const podeVer = useCallback((papeis: Papel[]) => !!usuario && papeis.includes(usuario.papel), [usuario])
 
   const valor = useMemo(() => ({ usuario, entrar, sair, podeVer }), [usuario, entrar, sair, podeVer])
+
+  if (eu.isPending) return <Carregando texto="Conferindo sua sessão…" />
+  if (eu.isError) return <ErroCarga mensagem={mensagemDeErro(eu.error)} aoTentarDeNovo={() => eu.refetch()} />
+
   return <AuthCtx.Provider value={valor}>{children}</AuthCtx.Provider>
 }
 

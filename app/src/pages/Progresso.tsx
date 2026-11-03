@@ -3,56 +3,71 @@ import { Link } from 'react-router-dom'
 import { Award, TrendingUp } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
-import { Badge, FaixaBadge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { FaixaBadge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
-import { EmptyState, PageHeader, Progress as Barra, ProgressRing, Tabs } from '@/components/ui/Misc'
-import { useStore } from '@/app/store'
-import { FAIXAS, dataCurta } from '@/lib/format'
+import {
+  Carregando,
+  EmptyState,
+  ErroCarga,
+  PageHeader,
+  Progress as Barra,
+  ProgressRing,
+  Tabs,
+} from '@/components/ui/Misc'
+import { useAuth } from '@/app/auth'
+import { useAlunos, useGraduar } from '@/api/alunos'
+import { useElegiveis, useFaixas, type Elegivel } from '@/api/metricas'
+import { mensagemDeErro } from '@/lib/api'
+import { FAIXAS, hojeISO } from '@/lib/format'
 import type { Faixa } from '@/types'
+import { ProgressoAluno } from './progresso/ProgressoAluno'
 
 const ORDEM: Faixa[] = ['branca', 'cinza', 'amarela', 'laranja', 'verde', 'azul', 'roxa', 'marrom', 'preta']
 
-/* Critério de elegibilidade usado pela academia — simplificado no protótipo.
-   Na Fase 2 isto vira uma regra configurável por academia. */
-const MESES_MINIMOS = 12
-const FREQUENCIA_MINIMA = 70
-
+/* O aluno vê só o próprio progresso (defeito 8); a equipe vê a academia e os elegíveis. */
 export function Progresso() {
-  const { alunos } = useStore()
-  const [aba, setAba] = useState<'panorama' | 'elegiveis'>('panorama')
+  const { usuario } = useAuth()
+  return usuario?.papel === 'aluno' ? <ProgressoAluno /> : <ProgressoEquipe />
+}
 
-  const ativos = useMemo(() => alunos.filter((a) => a.status === 'ativo'), [alunos])
+const mesesDesde = (iso: string) => {
+  const [a, m] = iso.split('-').map(Number)
+  const [ha, hm] = hojeISO().split('-').map(Number)
+  return (ha - a) * 12 + (hm - m)
+}
+
+function ProgressoEquipe() {
+  const [aba, setAba] = useState<'panorama' | 'elegiveis'>('panorama')
+  const faixas = useFaixas()
+  const alunos = useAlunos().data
+  const elegiveis = useElegiveis()
 
   const distribuicao = useMemo(() => {
-    const m = new Map<Faixa, number>()
-    for (const a of ativos) m.set(a.faixa, (m.get(a.faixa) ?? 0) + 1)
-    return ORDEM.filter((f) => m.has(f)).map((f) => ({
-      faixa: f,
-      label: FAIXAS[f].label,
-      cor: FAIXAS[f].cor === '#e4e8ed' ? '#c4cbd4' : FAIXAS[f].cor,
-      qtd: m.get(f)!,
-      pct: Math.round((m.get(f)! / ativos.length) * 100),
-    }))
-  }, [ativos])
+    const itens = faixas.data?.itens ?? []
+    return ORDEM.filter((f) => itens.some((i) => i.faixa === f)).map((f) => {
+      const i = itens.find((x) => x.faixa === f)!
+      return {
+        faixa: f,
+        label: FAIXAS[f].label,
+        cor: FAIXAS[f].cor === '#e4e8ed' ? '#c4cbd4' : FAIXAS[f].cor,
+        qtd: i.qtd,
+        pct: i.pct,
+      }
+    })
+  }, [faixas.data])
 
-  const mesesNaAcademia = (matriculaEm: string) => {
-    const d = new Date(matriculaEm + 'T12:00:00')
-    const hoje = new Date()
-    return (hoje.getFullYear() - d.getFullYear()) * 12 + (hoje.getMonth() - d.getMonth())
-  }
+  const ativos = useMemo(() => (alunos ?? []).filter((a) => a.status === 'ativo'), [alunos])
 
-  const elegiveis = useMemo(
-    () =>
-      ativos
-        .filter((a) => mesesNaAcademia(a.matriculaEm) >= MESES_MINIMOS && a.frequencia30d >= FREQUENCIA_MINIMA)
-        .sort((a, b) => b.frequencia30d - a.frequencia30d),
-    [ativos],
-  )
+  if (faixas.isError)
+    return <ErroCarga mensagem={mensagemDeErro(faixas.error)} aoTentarDeNovo={() => faixas.refetch()} />
+  if (faixas.isPending) return <Carregando />
 
-  const graduados = ativos.filter((a) => a.faixa !== 'branca').length
-  const pctGraduados = ativos.length ? Math.round((graduados / ativos.length) * 100) : 0
+  const total = faixas.data.total
+  const graduados = distribuicao.filter((d) => d.faixa !== 'branca').reduce((s, d) => s + d.qtd, 0)
+  const pctGraduados = total ? Math.round((graduados / total) * 100) : 0
   const tempoMedio = ativos.length
-    ? Math.round(ativos.reduce((s, a) => s + mesesNaAcademia(a.matriculaEm), 0) / ativos.length)
+    ? Math.round(ativos.reduce((s, a) => s + mesesDesde(a.matriculaEm), 0) / ativos.length)
     : 0
 
   return (
@@ -68,7 +83,7 @@ export function Progresso() {
           aoMudar={setAba}
           itens={[
             { id: 'panorama', label: 'Panorama' },
-            { id: 'elegiveis', label: 'Elegíveis à graduação', contagem: elegiveis.length },
+            { id: 'elegiveis', label: 'Elegíveis à graduação', contagem: elegiveis.data?.itens.length },
           ]}
         />
       </div>
@@ -99,10 +114,10 @@ export function Progresso() {
                   </div>
                   <div>
                     <p className="rs-label">Faixa branca</p>
-                    <p className="rs-title text-2xl text-rs-ink">{ativos.length - graduados}</p>
+                    <p className="rs-title text-2xl text-rs-ink">{total - graduados}</p>
                   </div>
                   <div>
-                    <p className="rs-label">Tempo médio</p>
+                    <p className="rs-label">Tempo médio de casa</p>
                     <p className="rs-title text-2xl text-rs-ink">
                       {tempoMedio}
                       <span className="text-sm text-rs-gray-500"> meses</span>
@@ -137,7 +152,10 @@ export function Progresso() {
           </div>
 
           <Card className="mt-4">
-            <CardHeader titulo="Legenda das faixas" descricao="Cor, rótulo e participação — a cor nunca aparece sozinha" />
+            <CardHeader
+              titulo="Legenda das faixas"
+              descricao="Cor, rótulo e participação — a cor nunca aparece sozinha"
+            />
             <CardBody className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {distribuicao.map((d) => (
                 <div key={d.faixa} className="rounded-md border border-rs-gray-200 p-4">
@@ -153,73 +171,128 @@ export function Progresso() {
           </Card>
         </>
       ) : (
-        <Card>
-          <CardHeader
-            titulo="Elegíveis à graduação"
-            descricao={`Ao menos ${MESES_MINIMOS} meses de casa e ${FREQUENCIA_MINIMA}% de frequência nos últimos 30 dias`}
-          />
-          {elegiveis.length === 0 ? (
-            <EmptyState
-              icone={<Award className="size-6" />}
-              titulo="Ninguém elegível no momento"
-              mensagem="Os critérios consideram tempo de treino e frequência recente. Continue acompanhando a turma."
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left">
-                <thead>
-                  <tr className="border-b border-rs-gray-200">
-                    {['Aluno', 'Faixa atual', 'Tempo de treino', 'Frequência', 'Próxima faixa', ''].map((h) => (
-                      <th key={h} className="rs-label px-5 py-3">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-rs-gray-200">
-                  {elegiveis.map((a) => {
-                    const idx = ORDEM.indexOf(a.faixa)
-                    const proxima = idx < ORDEM.length - 1 ? ORDEM[idx + 1] : null
-                    const meses = mesesNaAcademia(a.matriculaEm)
-                    return (
-                      <tr key={a.id} className="hover:bg-rs-gray-50">
-                        <td className="px-5 py-3">
-                          <Link to={`/alunos/${a.id}`} className="flex items-center gap-3">
-                            <Avatar nome={a.nome} />
-                            <span className="min-w-0">
-                              <span className="block truncate font-semibold text-rs-ink">{a.nome}</span>
-                              <span className="block text-xs text-rs-gray-500">desde {dataCurta(a.matriculaEm)}</span>
-                            </span>
-                          </Link>
-                        </td>
-                        <td className="px-5 py-3">
-                          <FaixaBadge faixa={a.faixa} graus={a.graus} compacto />
-                        </td>
-                        <td className="px-5 py-3 text-sm text-rs-gray-700">
-                          {meses} {meses === 1 ? 'mês' : 'meses'}
-                        </td>
-                        <td className="px-5 py-3">
-                          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-rs-success">
-                            <TrendingUp className="size-4" />
-                            {a.frequencia30d}%
-                          </span>
-                        </td>
-                        <td className="px-5 py-3">{proxima ? <FaixaBadge faixa={proxima} compacto /> : <span className="text-sm text-rs-gray-500">—</span>}</td>
-                        <td className="px-5 py-3 text-right">
-                          <Badge tom="azul">
-                            <Award className="size-3.5" />
-                            Avaliar
-                          </Badge>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+        <ListaElegiveis consulta={elegiveis} />
       )}
     </>
+  )
+}
+
+function ListaElegiveis({ consulta }: { consulta: ReturnType<typeof useElegiveis> }) {
+  const graduar = useGraduar()
+  const [confirmando, setConfirmando] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<{ tom: 'ok' | 'erro'; texto: string } | null>(null)
+
+  if (consulta.isError)
+    return <ErroCarga mensagem={mensagemDeErro(consulta.error)} aoTentarDeNovo={() => consulta.refetch()} />
+  if (consulta.isPending) return <Carregando />
+
+  const { regraProvisoria: regra, itens } = consulta.data
+
+  const registrar = (e: Elegivel) => {
+    setAviso(null)
+    graduar.mutate(
+      { id: e.alunoId, faixa: e.proxima.faixa, graus: e.proxima.graus },
+      {
+        onSuccess: () => {
+          setConfirmando(null)
+          setAviso({ tom: 'ok', texto: `Graduação de ${e.nome} registrada.` })
+        },
+        onError: (err) => setAviso({ tom: 'erro', texto: mensagemDeErro(err) }),
+      },
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        titulo="Elegíveis à graduação"
+        descricao={`Regra provisória, até a academia definir o critério (E1): ao menos ${Math.round(regra.diasMinimos / 30)} meses desde a última graduação e ${regra.frequenciaMinima}% de frequência nos últimos 30 dias`}
+      />
+      {aviso && (
+        <p
+          role={aviso.tom === 'erro' ? 'alert' : 'status'}
+          className={
+            aviso.tom === 'erro'
+              ? 'border-b border-rs-red-100 bg-rs-red-50 px-5 py-3 text-sm font-medium text-rs-red-700'
+              : 'border-b border-rs-gray-200 bg-rs-gray-50 px-5 py-3 text-sm text-rs-gray-700'
+          }
+        >
+          {aviso.texto}
+        </p>
+      )}
+      {itens.length === 0 ? (
+        <EmptyState
+          icone={<Award className="size-6" />}
+          titulo="Ninguém elegível no momento"
+          mensagem="Os critérios consideram o tempo desde a última graduação e a frequência recente."
+        />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[820px] text-left">
+            <thead>
+              <tr className="border-b border-rs-gray-200">
+                {['Aluno', 'Faixa atual', 'Desde a última', 'Frequência', 'Próximo passo', ''].map((h) => (
+                  <th key={h} className="rs-label px-5 py-3">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-rs-gray-200">
+              {itens.map((e) => {
+                const meses = Math.floor(e.diasDesdeUltima / 30)
+                return (
+                  <tr key={e.alunoId} className="hover:bg-rs-gray-50">
+                    <td className="px-5 py-3">
+                      <Link to={`/alunos/${e.alunoId}`} className="flex items-center gap-3">
+                        <Avatar nome={e.nome} />
+                        <span className="truncate font-semibold text-rs-ink">{e.nome}</span>
+                      </Link>
+                    </td>
+                    <td className="px-5 py-3">
+                      <FaixaBadge faixa={e.faixa} graus={e.graus} compacto />
+                    </td>
+                    <td className="px-5 py-3 text-sm text-rs-gray-700">
+                      {meses} {meses === 1 ? 'mês' : 'meses'}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-rs-success">
+                        <TrendingUp className="size-4" />
+                        {Math.round(e.frequencia30d)}%
+                      </span>
+                    </td>
+                    <td className="px-5 py-3">
+                      <FaixaBadge faixa={e.proxima.faixa} graus={e.proxima.graus} compacto />
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      {confirmando === e.alunoId ? (
+                        <span className="inline-flex gap-1.5">
+                          <Button
+                            tamanho="sm"
+                            variante="secundaria"
+                            disabled={graduar.isPending}
+                            onClick={() => registrar(e)}
+                          >
+                            {graduar.isPending ? 'Registrando…' : 'Confirmar'}
+                          </Button>
+                          <Button tamanho="sm" variante="fantasma" onClick={() => setConfirmando(null)}>
+                            Voltar
+                          </Button>
+                        </span>
+                      ) : (
+                        <Button tamanho="sm" variante="contorno" onClick={() => setConfirmando(e.alunoId)}>
+                          <Award className="size-4" />
+                          Registrar graduação
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   )
 }

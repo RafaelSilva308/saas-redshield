@@ -67,6 +67,7 @@ describe('LGPD', () => {
     const a = (await amb.db.query('select * from aluno where id = $1', [id])).rows[0]
     expect(a).toMatchObject({ nome: 'Aluno anonimizado', email: null, telefone: null, nascimento: null, status: 'inativo', observacoes: null })
     expect(a.anonimizado_em).toBeTruthy()
+    expect((await chamar(amb, gestorA, 'GET', `/alunos/${id}`)).json()).toMatchObject({ anonimizado: true, nome: 'Aluno anonimizado' })
     expect((await amb.db.query('select count(*)::int as n from presenca where aluno_id = $1', [id])).rows[0].n).toBe(presencasAntes)
     expect((await amb.db.query(`select count(*)::int as n from cobranca where aluno_id = $1 and status = 'aberta'`, [id])).rows[0].n).toBe(0)
     expect((await amb.db.query(`select count(*)::int as n from log_auditoria where entidade = 'aluno' and entidade_id = $1 and (dados_antes is not null or dados_depois is not null)`, [id])).rows[0].n).toBe(0)

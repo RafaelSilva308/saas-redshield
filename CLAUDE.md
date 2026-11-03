@@ -1,11 +1,11 @@
 # CLAUDE.md — contexto do projeto para sessões futuras
 
-Sistema de gestão da academia **REDSHIELD** (jiu-jitsu). **Front-end com dados simulados (`app/`) + API completa para a v1 (`server/`, Fastify + PostgreSQL, 80 testes), ainda não ligada ao front.** Não há deploy feito (só `Dockerfile`/`railway.json`/CI/backup escritos, nunca executados); veja `PROGRESSO.md` e `DEPLOY.md`.
+Sistema de gestão da academia **REDSHIELD** (jiu-jitsu). **Front (`app/`, React) ligado à API (`server/`, Fastify + PostgreSQL, 81 testes).** O protótipo com dados simulados ficou congelado na branch `prototipo`. Não há deploy feito (só `Dockerfile`/`railway.json`/CI/backup escritos, nunca executados); veja `PROGRESSO.md` e `DEPLOY.md`.
 Idioma do produto, dos documentos e dos commits: **português do Brasil**.
 
 ## Leia nesta ordem
 
-0. [`PROGRESSO.md`](./PROGRESSO.md): **o que já foi feito e o que falta** no back-end (atualizar ao fim de cada sessão).
+0. [`PROGRESSO.md`](./PROGRESSO.md): **o que já foi feito e o que falta** (atualizar ao fim de cada sessão).
 1. [`ROADMAP.md`](./ROADMAP.md): **fonte de verdade.** Decisões de produto já tomadas (D1–D7), pendências (V = dono do produto, E = academia), ordem de execução em 10 fases, infraestrutura e custos, riscos.
 2. [`BANCO_DE_DADOS.md`](./BANCO_DE_DADOS.md) + [`db/schema.sql`](./db/schema.sql): modelo PostgreSQL, **testado** em PG 16.
 3. [`ROTEIRO_DEMONSTRACAO.md`](./ROTEIRO_DEMONSTRACAO.md): sessão de validação com o professor (versão de 15 e de 35 minutos).
@@ -22,14 +22,14 @@ Mudar uma delas é decisão do dono do produto. Estão detalhadas no `ROADMAP.md
 - Risco de fraude no check-in **aceito** na v1. Não adicionar janela de horário, QR, geolocalização ou confirmação sem o dono pedir.
 - **Módulo Comunicados foi removido** por decisão do dono. Não recriar. (Os "Avisos automáticos" de Configurações são e-mails de cobrança, outra coisa.)
 
-## O que o protótipo faz e o que NÃO faz
+## Como o front fala com a API
 
-- Estado **em memória** (`app/src/app/store.tsx`): recarregar a página apaga tudo. Só a sessão de login fica no `localStorage`.
-- Trocar de usuário (Sair → entrar) **não** recarrega a página, então o estado se mantém. Útil para demonstrar aluno → professor.
-- `selectors.ts` lê dados simulados **fixos**, não o estado: o Painel e o campo "% em 30d" **não** reagem a check-ins. Isso some quando as métricas vierem do servidor.
-- O protótipo ainda carrega o modelo antigo (`store.fecharChamada`, `chamada.fechada`) que **não** deve ir para o back-end (defeito 10 do roadmap).
-- O login só confere o e-mail. **Não é segurança.** A guarda por papel (`ExigePapel`) é só navegação.
-- Valores em **reais** no front; no banco são **centavos** (`integer`). A conversão é na camada de API.
+- Todos os dados vêm da API. `app/src/lib/api.ts` faz as chamadas (mesma origem, cookie `httpOnly` da sessão); `app/src/api/*.ts` tem um hook do TanStack Query por recurso e converte o formato da API para o das telas.
+- Valores em **reais** no front; na API e no banco são **centavos**. A conversão é só em `src/api/` (`lib/dinheiro.ts`). Nenhuma tela manda centavos.
+- Login real (`app/auth.tsx`): nada de usuário ou token no `localStorage`. Só 401 com código `nao_autenticado` derruba a sessão no front.
+- A guarda por papel (`ExigePapel`, links e botões escondidos) é só navegação. **A autorização de verdade é da API.**
+- Painel e Progresso têm uma versão da equipe e uma do aluno. A do aluno usa só `/metricas/painel` (que já responde só com os dados dele) e `/eu/presencas` (defeito 8). Não pôr dado de outro aluno nas telas do aluno.
+- O modelo antigo de chamada fechada pelo professor (`fecharChamada`, `chamada.fechada`, defeito 10) foi removido. Não recriar.
 
 ## Infraestrutura decidida
 
@@ -41,22 +41,29 @@ Mudar uma delas é decisão do dono do produto. Estão detalhadas no `ROADMAP.md
 ## Nome e marca
 
 - Nome do produto e da academia: **REDSHIELD** (em texto corrido e na interface). Arquivos e pastas em minúsculas: `redshield_*`, pacote `redshield-app`.
-- Demonstração: e-mails `@redshield.com.br` (fictícios), chave de sessão `redshield.sessao` no `localStorage`.
+- Demonstração: e-mails `@redshield.com.br` (fictícios), criados pelo `npm run seed` do servidor.
 - A pasta `app/` e `db/` não levam o nome da marca de propósito (são papéis, não marca).
 - **O nome do repositório no GitHub** não pode ser alterado por uma sessão do Claude (as ferramentas não renomeiam repositório). Se ainda for `saas-gb`, renomeie em *Settings → General → Repository name*.
 
 ## Rodar, verificar, publicar
 
 ```bash
+# 1. API (outro terminal): precisa de PostgreSQL 15+ em DATABASE_URL
+cd server && npm run migrar && npm run seed && npm run dev   # http://localhost:3000
+# 2. Front
 cd app && npm install
-npm run dev        # http://localhost:5173
+npm run dev        # http://localhost:5173; o Vite repassa /api para a API (API_URL, padrão localhost:3000)
+npm test           # vitest: cliente da API e conversão de dinheiro
 npm run build      # tsc -b && vite build
-npx oxlint         # lint (restam avisos antigos de react/only-export-components e set-state-in-effect)
+npx oxlint         # lint (restam 4 avisos antigos de react/only-export-components e set-state-in-effect)
 ```
 
-- Demonstração: `gestor@redshield.com.br`, `professor@redshield.com.br`, `aluno@redshield.com.br`; senha `treino123`. As linhas em "Acessos de demonstração" preenchem o formulário.
-- O aluno de demonstração é `al1` (Pedro Almeida). O quadro simulado **não tem aulas aos domingos**; nesse dia o check-in mostra "Sem aula hoje".
-- Deploy: GitHub Actions (`.github/workflows/deploy.yml`) publica no **GitHub Pages** a cada push na `main`. `HashRouter` e `base: './'` por causa da hospedagem estática.
+- O proxy do Vite usa `changeOrigin: false` de propósito: a API recusa escrita cuja origem não bate com o Host.
+- Demonstração (seed): `gestor@redshield.com.br`, `professor@redshield.com.br`, `aluno@redshield.com.br`; senha `treino123`. Os atalhos "Acessos de demonstração" só aparecem em desenvolvimento.
+- O aluno de demonstração é Pedro Almeida (turma Fundamentos). Nos dias sem aula da turma dele, o check-in mostra "Sem aula hoje".
+- Sem PostgreSQL instalado: o pacote `embedded-postgres` (já em `server/node_modules`, é o que os testes usam) sobe um banco local.
+- Produção: a API serve o `app/dist` na mesma origem (`WEB_DIST`). `HashRouter` continua (links de e-mail usam `#/rota`).
+- GitHub Pages: publica só a branch **`prototipo`** (protótipo congelado, com dados simulados). A `main` não vai mais para o Pages.
 - Banco: para validar o schema, `psql` num PostgreSQL 15+ vazio: `psql -v ON_ERROR_STOP=1 -f db/schema.sql`. Há um PostgreSQL 16 instalado no ambiente de nuvem (cluster desligado por padrão).
 
 ## Convenções do código
@@ -64,13 +71,12 @@ npx oxlint         # lint (restam avisos antigos de react/only-export-components
 - React 19 + TypeScript estrito + Vite + Tailwind v4 + React Router (HashRouter). Nomes de domínio em português (`aluno`, `chamada`, `presenca`, `cobranca`).
 - Tokens de marca em `app/src/index.css` (`rs-red`, `rs-blue`, `rs-ink`…; prefixo `rs-` de REDSHIELD). **Nenhum estado depende só de cor**: todo badge tem rótulo.
 - Um botão primário (vermelho) por tela. Evite novas cores e novos componentes se já existe um em `components/ui/`.
-- Toda mutação passa por `store.tsx`; cada função ali corresponde a um endpoint futuro. Páginas não escrevem em `mock.ts`.
-- A data de "hoje" usa fuso **local** (`hojeISO()` em `lib/format.ts`). Não use `toISOString().slice(0,10)`: vira o dia às 21h em Brasília.
+- Toda leitura e escrita passa por um hook de `src/api/`; páginas não chamam `fetch` nem `api` direto. Carregando e erro: `Carregando` e `ErroCarga` (`components/ui/Misc.tsx`).
+- Datas que importam (hoje do check-in, presença, cobranças) vêm do servidor, no fuso da academia. No front, `hojeISO()` (`lib/format.ts`) usa o fuso **local**; não use `toISOString().slice(0,10)`: vira o dia às 21h em Brasília.
 
 ## Pendências críticas antes de qualquer lançamento
 
 - **V1: nome e identidade.** O nome REDSHIELD está adotado em todo o sistema, mas **não foi verificado** (INPI, domínio). Cores, tipografia e símbolo são provisórios; `referencia_visual_conceitual.png` traz símbolo e fotos que **não** são do REDSHIELD e deve sair do repositório antes de divulgar.
-- Painel do aluno ainda mostra dados da academia inteira, inclusive nomes e frequência de outros alunos (defeito 8). Resolver antes de ter login de aluno real.
 - Todas as pendências E1–E17 dependem de conversa com a academia; ver o roteiro de demonstração.
 
 ## Fluxo de trabalho no GitHub

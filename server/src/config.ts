@@ -1,3 +1,5 @@
+import { resolve } from 'node:path'
+
 export interface Config {
   ambiente: 'development' | 'production' | 'test'
   databaseUrl: string
@@ -34,7 +36,8 @@ export function lerConfig(env: NodeJS.ProcessEnv = process.env): Config {
     databaseUrl,
     porta,
     host: env.HOST ?? '0.0.0.0',
-    webDist: env.WEB_DIST,
+    // O @fastify/static exige caminho absoluto; relativo (como no .env.example) vale a partir da pasta da API.
+    webDist: env.WEB_DIST ? resolve(env.WEB_DIST) : undefined,
     sessaoDias: Number(env.SESSAO_DIAS ?? 14),
     cookieSeguro: ambiente === 'production',
     urlPublica: env.URL_PUBLICA ?? `http://localhost:${porta}`,

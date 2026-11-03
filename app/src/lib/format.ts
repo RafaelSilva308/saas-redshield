@@ -15,6 +15,10 @@ export const dataLonga = (iso: string) =>
     new Date(iso + (iso.length === 10 ? 'T12:00:00' : '')),
   )
 
+/** Primeiro nome para cumprimentar, ignorando títulos ("Prof.", "Professora"). */
+export const primeiroNome = (nome = '') =>
+  nome.split(' ').filter((p) => !/^(prof|profa|professor|professora)\.?$/i.test(p))[0] ?? ''
+
 export const iniciais = (nome: string) =>
   nome
     .split(' ')
