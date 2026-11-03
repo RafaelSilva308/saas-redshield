@@ -2,7 +2,7 @@
 
 Registro vivo do desenvolvimento. **Atualize ao fim de cada sessão.** O plano e as decisões continuam no [`ROADMAP.md`](./ROADMAP.md) (fonte de verdade); aqui fica o estado da execução.
 
-Última atualização: 2026-10-31 · branch `feat/front-api` (sem PR). **Servidor completo para a v1 e front ligado à API, com todas as telas; faltam as contas de infraestrutura e as decisões do dono.**
+Última atualização: 2026-11-03 · `feat/front-api` mergeada na `main` (PR #6). **Servidor completo para a v1 e front ligado à API, com todas as telas; faltam as contas de infraestrutura e as decisões do dono.**
 
 ## Como rodar o back-end (`server/`)
 
@@ -74,7 +74,8 @@ npm run rotinas          # roda uma vez as rotinas (cobranças do mês e avisos)
 | Servidor | `WEB_DIST` relativo (como no `.env.example`) derrubava a API ao subir; agora é resolvido para caminho absoluto. Verificado: API servindo o build do front na mesma origem, com a CSP de produção e os gráficos | `server/src/config.ts` |
 
 - `mock.ts`, `selectors.ts` e `store.tsx` foram apagados. O protótipo com dados simulados ficou congelado na branch **`prototipo`**, e o GitHub Pages passou a publicar só ela.
-- **Para o Pages voltar a publicar:** em *Settings → Environments → github-pages*, liberar a branch `prototipo` (hoje só a `main` pode publicar) e rodar o fluxo *Deploy no GitHub Pages*.
+- A branch `prototipo` foi liberada no ambiente `github-pages` e publicou com sucesso em 2026-11-03.
+- Backup: os scripts de `scripts/` estavam sem permissão de execução no Git, e o backup diário falhava com *Permission denied* desde que entrou na `main`. Corrigido, e o fluxo não engole mais a falha do `pg_dump`. Backup e restauração testados localmente (PG 16, banco com seed). Continua falhando todo dia até os segredos `BACKUP_*` existirem: é o esperado.
 
 ## Pontos de atenção
 
