@@ -121,12 +121,13 @@ export function ocupacaoTurmas() {
 }
 
 /** Próxima aula a partir de agora, considerando o quadro semanal. */
-export function proximaAula() {
+/** Próxima aula do quadro. Com `filtro`, só as aulas que passam nele (ex.: as turmas de um aluno). */
+export function proximaAula(filtro: (a: Aula) => boolean = () => true) {
   const agora = new Date()
   for (let d = 0; d < 8; d++) {
     const alvo = new Date(agora)
     alvo.setDate(alvo.getDate() + d)
-    const doDia = AULAS.filter((a) => a.diaSemana === alvo.getDay()).sort((a, b) => a.inicio.localeCompare(b.inicio))
+    const doDia = AULAS.filter((a) => a.diaSemana === alvo.getDay() && filtro(a)).sort((a, b) => a.inicio.localeCompare(b.inicio))
     for (const aula of doDia) {
       const [h, m] = aula.inicio.split(':').map(Number)
       const quando = new Date(alvo)

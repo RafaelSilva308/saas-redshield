@@ -59,7 +59,7 @@ export function Checkin() {
     )
   }
 
-  const proxima = proximaAula()
+  const proxima = proximaAula((a) => alunoNaAula(aluno, a))
 
   const agir = (resultado: { ok: boolean; erro?: string }) => setErro(resultado.ok ? '' : (resultado.erro ?? 'Não foi possível concluir.'))
 
