@@ -45,7 +45,10 @@ jobs:
         env:
           BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
-        run: echo "arquivo=$(scripts/backup.sh)" >> "$GITHUB_OUTPUT"
+        # Atribuição separada: dentro de `echo "...$(...)"` a falha do script seria engolida pelo echo.
+        run: |
+          arquivo="$(scripts/backup.sh)"
+          echo "arquivo=$arquivo" >> "$GITHUB_OUTPUT"
 
       - name: Testar a restauração
         env:
