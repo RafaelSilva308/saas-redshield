@@ -121,3 +121,78 @@
   background: var(--color-rs-gray-500);
   background-clip: content-box;
 }
+
+/* Celular. Fora de @layer de propósito: no Tailwind v4, CSS sem camada vence as utilitárias. */
+@media (max-width: 639px) {
+  /* O Safari do iPhone dá zoom na página ao focar um campo com fonte menor que 16px. */
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Toque: sem o atraso de 300 ms e sem o realce cinza do Android ao tocar. */
+a,
+button,
+[role='button'],
+[role='tab'],
+label,
+select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Tabelas largas viram cartões no celular. Na tabela: classe `rs-tabela-cartoes`; em cada célula do corpo,
+   `data-principal` (a primeira, sem rótulo), `data-label="…"` (rótulo à esquerda, valor à direita) ou
+   `data-acoes` (botões, numa linha própria). Fora de @layer para vencer as utilitárias de padding e min-width. */
+@media (max-width: 767px) {
+  table.rs-tabela-cartoes {
+    min-width: 0;
+  }
+  .rs-tabela-cartoes thead {
+    display: none;
+  }
+  .rs-tabela-cartoes,
+  .rs-tabela-cartoes tbody,
+  .rs-tabela-cartoes tr,
+  .rs-tabela-cartoes td {
+    display: block;
+    width: 100%;
+  }
+  .rs-tabela-cartoes tr {
+    padding: 0.875rem 1rem;
+  }
+  .rs-tabela-cartoes td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.1875rem 0;
+    text-align: right;
+  }
+  .rs-tabela-cartoes td[data-principal] {
+    display: block;
+    padding: 0 0 0.375rem;
+    text-align: left;
+  }
+  .rs-tabela-cartoes td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-align: left;
+    text-transform: uppercase;
+    color: var(--color-rs-gray-500);
+  }
+  .rs-tabela-cartoes td[data-acoes] {
+    justify-content: flex-start;
+    padding-top: 0.5rem;
+    text-align: left;
+  }
+  .rs-tabela-cartoes td[data-acoes] > * {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}

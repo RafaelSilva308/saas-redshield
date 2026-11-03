@@ -117,7 +117,7 @@ export function Presenca() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-4">
           {/* Resumo da chamada */}
-          <Card className="lg:col-span-1 lg:order-2 lg:sticky lg:top-20 lg:self-start">
+          <Card className="order-2 lg:col-span-1 lg:sticky lg:top-20 lg:self-start">
             <CardHeader titulo="Resumo" descricao={dataLonga(data)} />
             <CardBody className="space-y-4">
               <div>
@@ -162,7 +162,7 @@ export function Presenca() {
           </Card>
 
           {/* Lista de chamada */}
-          <Card className="lg:col-span-3 lg:order-1">
+          <Card className="order-1 lg:col-span-3">
             <CardHeader
               titulo="Presenças"
               descricao={`${elegiveis.length} alunos elegíveis para esta turma`}

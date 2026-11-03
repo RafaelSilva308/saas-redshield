@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 
 /** Cabeçalho de página: título condensado em caixa alta + subtítulo cinza + ações. */
@@ -157,10 +157,21 @@ export function Tabs<T extends string>({
   aoMudar: (v: T) => void
   itens: { id: T; label: string; contagem?: number }[]
 }) {
+  const lista = useRef<HTMLDivElement>(null)
+
+  // No celular as abas podem não caber: a ativa sempre fica à vista (rolagem lateral).
+  useEffect(() => {
+    const el = lista.current?.querySelector<HTMLElement>('[aria-selected="true"]')
+    const box = lista.current
+    if (!el || !box || box.scrollWidth <= box.clientWidth) return
+    box.scrollTo({ left: el.offsetLeft - (box.clientWidth - el.offsetWidth) / 2, behavior: 'smooth' })
+  }, [valor])
+
   return (
     <div
+      ref={lista}
       role="tablist"
-      className="-mx-1 flex gap-1 overflow-x-auto border-b border-rs-gray-200 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="-mx-1 flex snap-x gap-0.5 overflow-x-auto border-b border-rs-gray-200 px-1 [scrollbar-width:none] sm:gap-1 [&::-webkit-scrollbar]:hidden"
     >
       {itens.map((it) => {
         const ativo = it.id === valor
@@ -171,7 +182,7 @@ export function Tabs<T extends string>({
             aria-selected={ativo}
             onClick={() => aoMudar(it.id)}
             className={cn(
-              '-mb-px cursor-pointer whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors',
+              '-mb-px shrink-0 cursor-pointer snap-start whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold transition-colors sm:px-4 sm:py-2.5',
               ativo
                 ? 'border-rs-red-600 text-rs-ink'
                 : 'border-transparent text-rs-gray-500 hover:border-rs-gray-300 hover:text-rs-ink',

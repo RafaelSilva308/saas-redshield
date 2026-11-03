@@ -139,7 +139,7 @@ export function Alunos() {
           <Select
             value={faixa}
             onChange={(e) => setFaixa(e.target.value as typeof faixa)}
-            wrapClass="w-[calc(50%-0.375rem)] sm:w-40"
+            wrapClass="w-[calc(50%-0.375rem)] sm:w-44"
             aria-label="Filtrar por faixa"
           >
             <option value="todas">Todas as faixas</option>
@@ -191,7 +191,57 @@ export function Alunos() {
             }
           />
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Celular e tablet: um cartão por aluno, sem rolagem lateral */}
+          <ul className="divide-y divide-rs-gray-200 lg:hidden">
+            {filtrados.map((a) => {
+              const p = planos.find((x) => x.id === a.planoId)
+              const pag = STATUS_PAGAMENTO[a.statusPagamento]
+              return (
+                <li key={a.id}>
+                  <Link
+                    to={`/alunos/${a.id}`}
+                    className="flex gap-3 px-4 py-3.5 transition-colors active:bg-rs-gray-100 sm:px-5"
+                  >
+                    <Avatar nome={a.nome} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="min-w-0">
+                          <span className="block truncate font-semibold text-rs-ink">{a.nome}</span>
+                          <span className="block truncate text-xs text-rs-gray-500">
+                            {a.nascimento && `${idade(a.nascimento)} anos · `}desde {dataCurta(a.matriculaEm)}
+                          </span>
+                        </span>
+                        <Badge tom={pag.tom}>{pag.label}</Badge>
+                      </span>
+                      <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-rs-gray-700">
+                        <FaixaBadge faixa={a.faixa} graus={a.graus} compacto />
+                        <span>
+                          {p?.nome ?? 'Sem plano'} · dia {a.vencimentoDia}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="h-1.5 w-10 overflow-hidden rounded-full bg-rs-gray-200">
+                            <span
+                              className={cn(
+                                'block h-full rounded-full',
+                                a.frequencia30d >= 70 ? 'bg-rs-success' : a.frequencia30d >= 40 ? 'bg-rs-warn' : 'bg-rs-red-600',
+                              )}
+                              style={{ width: `${a.frequencia30d}%` }}
+                            />
+                          </span>
+                          <span className="font-semibold text-rs-ink">{a.frequencia30d}%</span>
+                          <span className="text-rs-gray-500">em 30d</span>
+                        </span>
+                        {a.status !== 'ativo' && <Badge tom={STATUS_ALUNO[a.status].tom}>{STATUS_ALUNO[a.status].label}</Badge>}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full min-w-[900px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-rs-gray-200 bg-white">
@@ -253,7 +303,7 @@ export function Alunos() {
                             setFormAberto(true)
                           }}
                           aria-label={`Editar ${a.nome}`}
-                          className="cursor-pointer rounded-md p-2 text-rs-gray-500 opacity-0 transition-opacity hover:bg-rs-gray-100 hover:text-rs-ink focus-visible:opacity-100 group-hover:opacity-100"
+                          className="cursor-pointer rounded-md p-2 text-rs-gray-500 opacity-0 transition-opacity hover:bg-rs-gray-100 hover:text-rs-ink focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                         >
                           <Pencil className="size-4" />
                         </button>
@@ -264,6 +314,7 @@ export function Alunos() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </Card>
 

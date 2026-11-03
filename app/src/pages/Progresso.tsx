@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Award, TrendingUp } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { useCelular } from '@/lib/tela'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Badge, FaixaBadge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
@@ -18,6 +19,7 @@ const MESES_MINIMOS = 12
 const FREQUENCIA_MINIMA = 70
 
 export function Progresso() {
+  const celular = useCelular()
   const { alunos } = useStore()
   const [aba, setAba] = useState<'panorama' | 'elegiveis'>('panorama')
 
@@ -118,7 +120,16 @@ export function Progresso() {
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={distribuicao} margin={{ top: 8, right: 12, bottom: 0, left: 4 }}>
                     <CartesianGrid stroke="#e4e8ed" vertical={false} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#667085' }} />
+                    <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fontSize: celular ? 11 : 12, fill: '#667085' }}
+                    interval={0}
+                    angle={celular ? -35 : 0}
+                    textAnchor={celular ? 'end' : 'middle'}
+                    height={celular ? 56 : 30}
+                  />
                     <YAxis tickLine={false} axisLine={false} width={32} tick={{ fontSize: 12, fill: '#667085' }} />
                     <Tooltip
                       formatter={(v) => [`${Number(v)} alunos`, 'Total']}
@@ -166,7 +177,7 @@ export function Progresso() {
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left">
+              <table className="rs-tabela-cartoes w-full min-w-[720px] text-left">
                 <thead>
                   <tr className="border-b border-rs-gray-200">
                     {['Aluno', 'Faixa atual', 'Tempo de treino', 'Frequência', 'Próxima faixa', ''].map((h) => (
@@ -183,7 +194,7 @@ export function Progresso() {
                     const meses = mesesNaAcademia(a.matriculaEm)
                     return (
                       <tr key={a.id} className="hover:bg-rs-gray-50">
-                        <td className="px-5 py-3">
+                        <td data-principal className="px-5 py-3">
                           <Link to={`/alunos/${a.id}`} className="flex items-center gap-3">
                             <Avatar nome={a.nome} />
                             <span className="min-w-0">
@@ -192,20 +203,20 @@ export function Progresso() {
                             </span>
                           </Link>
                         </td>
-                        <td className="px-5 py-3">
+                        <td data-label="Faixa atual" className="px-5 py-3">
                           <FaixaBadge faixa={a.faixa} graus={a.graus} compacto />
                         </td>
-                        <td className="px-5 py-3 text-sm text-rs-gray-700">
+                        <td data-label="Tempo de treino" className="px-5 py-3 text-sm text-rs-gray-700">
                           {meses} {meses === 1 ? 'mês' : 'meses'}
                         </td>
-                        <td className="px-5 py-3">
+                        <td data-label="Frequência" className="px-5 py-3">
                           <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-rs-success">
                             <TrendingUp className="size-4" />
                             {a.frequencia30d}%
                           </span>
                         </td>
-                        <td className="px-5 py-3">{proxima ? <FaixaBadge faixa={proxima} compacto /> : <span className="text-sm text-rs-gray-500">—</span>}</td>
-                        <td className="px-5 py-3 text-right">
+                        <td data-label="Próxima faixa" className="px-5 py-3">{proxima ? <FaixaBadge faixa={proxima} compacto /> : <span className="text-sm text-rs-gray-500">—</span>}</td>
+                        <td data-acoes className="px-5 py-3 text-right">
                           <Badge tom="azul">
                             <Award className="size-3.5" />
                             Avaliar

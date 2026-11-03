@@ -13,6 +13,7 @@ export function StatCard({
   icone,
   destaque,
   para,
+  className,
 }: {
   label: string
   valor: string | number
@@ -23,6 +24,7 @@ export function StatCard({
   /** `destaque` pinta o card de vermelho — reservado para 1 ação de conversão por tela. */
   destaque?: boolean
   para?: string
+  className?: string
 }) {
   const positiva = (variacao ?? 0) >= 0
   const conteudo = (
@@ -32,7 +34,7 @@ export function StatCard({
         {icone && (
           <span
             className={cn(
-              'grid size-9 shrink-0 place-items-center rounded-md',
+              'grid size-8 shrink-0 place-items-center rounded-md sm:size-9',
               destaque ? 'bg-white/15 text-white' : 'bg-rs-blue-50 text-rs-blue-600',
             )}
           >
@@ -41,9 +43,9 @@ export function StatCard({
         )}
       </div>
 
-      <p className={cn('rs-metric mt-3', destaque ? 'text-white' : 'text-rs-ink')}>
+      <p className={cn('rs-metric mt-2 text-[1.75rem] sm:mt-3 sm:text-[2.5rem]', destaque ? 'text-white' : 'text-rs-ink')}>
         {valor}
-        {sufixo && <span className="text-2xl">{sufixo}</span>}
+        {sufixo && <span className="text-xl sm:text-2xl">{sufixo}</span>}
       </p>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -65,9 +67,10 @@ export function StatCard({
   )
 
   const classe = cn(
-    'block rounded-lg border p-5 shadow-[var(--shadow-card)] transition-shadow',
+    'block min-w-0 rounded-lg border p-4 shadow-[var(--shadow-card)] transition-shadow sm:p-5',
     destaque ? 'border-transparent bg-rs-red-600' : 'border-rs-gray-200 bg-white',
     para && 'hover:shadow-[0_4px_14px_rgba(17,17,17,0.10)]',
+    className,
   )
 
   if (para) {
