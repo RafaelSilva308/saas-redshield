@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Award, TrendingUp } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { useCelular } from '@/lib/tela'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { FaixaBadge } from '@/components/ui/Badge'
@@ -39,6 +40,7 @@ const mesesDesde = (iso: string) => {
 
 function ProgressoEquipe() {
   const [aba, setAba] = useState<'panorama' | 'elegiveis'>('panorama')
+  const celular = useCelular()
   const faixas = useFaixas()
   const alunos = useAlunos().data
   const elegiveis = useElegiveis()
@@ -133,7 +135,16 @@ function ProgressoEquipe() {
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={distribuicao} margin={{ top: 8, right: 12, bottom: 0, left: 4 }}>
                     <CartesianGrid stroke="#e4e8ed" vertical={false} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#667085' }} />
+                    <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fontSize: celular ? 11 : 12, fill: '#667085' }}
+                    interval={0}
+                    angle={celular ? -35 : 0}
+                    textAnchor={celular ? 'end' : 'middle'}
+                    height={celular ? 56 : 30}
+                  />
                     <YAxis tickLine={false} axisLine={false} width={32} tick={{ fontSize: 12, fill: '#667085' }} />
                     <Tooltip
                       formatter={(v) => [`${Number(v)} alunos`, 'Total']}
@@ -228,7 +239,7 @@ function ListaElegiveis({ consulta }: { consulta: ReturnType<typeof useElegiveis
         />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-left">
+          <table className="rs-tabela-cartoes w-full min-w-[820px] text-left">
             <thead>
               <tr className="border-b border-rs-gray-200">
                 {['Aluno', 'Faixa atual', 'Desde a última', 'Frequência', 'Próximo passo', ''].map((h) => (
@@ -243,28 +254,28 @@ function ListaElegiveis({ consulta }: { consulta: ReturnType<typeof useElegiveis
                 const meses = Math.floor(e.diasDesdeUltima / 30)
                 return (
                   <tr key={e.alunoId} className="hover:bg-rs-gray-50">
-                    <td className="px-5 py-3">
+                    <td data-principal className="px-5 py-3">
                       <Link to={`/alunos/${e.alunoId}`} className="flex items-center gap-3">
                         <Avatar nome={e.nome} />
                         <span className="truncate font-semibold text-rs-ink">{e.nome}</span>
                       </Link>
                     </td>
-                    <td className="px-5 py-3">
+                    <td data-label="Faixa atual" className="px-5 py-3">
                       <FaixaBadge faixa={e.faixa} graus={e.graus} compacto />
                     </td>
-                    <td className="px-5 py-3 text-sm text-rs-gray-700">
+                    <td data-label="Desde a última" className="px-5 py-3 text-sm text-rs-gray-700">
                       {meses} {meses === 1 ? 'mês' : 'meses'}
                     </td>
-                    <td className="px-5 py-3">
+                    <td data-label="Frequência" className="px-5 py-3">
                       <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-rs-success">
                         <TrendingUp className="size-4" />
                         {Math.round(e.frequencia30d)}%
                       </span>
                     </td>
-                    <td className="px-5 py-3">
+                    <td data-label="Próximo passo" className="px-5 py-3">
                       <FaixaBadge faixa={e.proxima.faixa} graus={e.proxima.graus} compacto />
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td data-acoes className="px-5 py-3 text-right">
                       {confirmando === e.alunoId ? (
                         <span className="inline-flex gap-1.5">
                           <Button

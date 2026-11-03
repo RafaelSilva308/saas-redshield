@@ -26,8 +26,8 @@ export function RedefinirSenha() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-rs-gray-50 px-6 py-12">
-      <div className="w-full max-w-sm rounded-lg border border-rs-gray-200 bg-white p-8 shadow-[var(--shadow-card)]">
+    <div className="flex min-h-screen min-h-dvh items-center justify-center bg-rs-gray-50 px-4 py-10 sm:px-6 sm:py-12">
+      <div className="w-full max-w-sm rounded-lg border border-rs-gray-200 bg-white p-6 sm:p-8 shadow-[var(--shadow-card)]">
         <LogoMark className="size-10 text-rs-red-600" />
 
         {redefinir.isSuccess ? (

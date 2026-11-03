@@ -115,12 +115,12 @@ export function Agenda() {
                   onClick={() => setVisao(id)}
                   aria-pressed={visao === id}
                   className={cn(
-                    'inline-flex h-10 cursor-pointer items-center gap-1.5 px-3 text-sm font-semibold transition-colors',
+                    'inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-1.5 px-3 text-sm font-semibold transition-colors',
                     visao === id ? 'bg-rs-blue-600 text-white' : 'bg-white text-rs-gray-700 hover:bg-rs-gray-50',
                   )}
                 >
                   <Icone className="size-4" />
-                  <span className="hidden sm:inline">{label}</span>
+                  <span>{label}</span>
                 </button>
               ))}
             </div>
@@ -247,7 +247,7 @@ export function Agenda() {
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left">
+              <table className="rs-tabela-cartoes w-full min-w-[720px] text-left">
                 <thead>
                   <tr className="border-b border-rs-gray-200">
                     {['Dia', 'Horário', 'Aula', 'Turma', 'Local', 'Capacidade', ''].map((h) => (
@@ -264,16 +264,16 @@ export function Agenda() {
                       const turma = turmaPorId(aula.turmaId)
                       return (
                         <tr key={aula.id} className="group hover:bg-rs-gray-50">
-                          <td className="px-5 py-3">
+                          <td data-principal className="px-5 py-3">
                             <span className="inline-flex items-center gap-2 text-sm font-semibold text-rs-ink">
                               {DIAS_SEMANA[aula.diaSemana]}
                               {aula.diaSemana === hoje && <Badge tom="azul">Hoje</Badge>}
                             </span>
                           </td>
-                          <td className="px-5 py-3 font-mono text-sm text-rs-gray-700">
+                          <td data-label="Horário" className="px-5 py-3 font-mono text-sm text-rs-gray-700">
                             {aula.inicio}–{aula.fim}
                           </td>
-                          <td className="px-5 py-3">
+                          <td data-label="Aula" className="px-5 py-3">
                             <button
                               onClick={() => abrir(aula)}
                               disabled={!podeEditar}
@@ -282,15 +282,15 @@ export function Agenda() {
                               {aula.titulo}
                             </button>
                           </td>
-                          <td className="px-5 py-3">
+                          <td data-label="Turma" className="px-5 py-3">
                             <span className="inline-flex items-center gap-1.5 text-sm text-rs-gray-700">
                               <span aria-hidden className="size-2.5 rounded-full" style={{ background: turma?.cor }} />
                               {turma?.nome}
                             </span>
                           </td>
-                          <td className="px-5 py-3 text-sm text-rs-gray-700">{aula.local}</td>
-                          <td className="px-5 py-3 text-sm text-rs-gray-700">{aula.capacidade} vagas</td>
-                          <td className="px-5 py-3 text-right">
+                          <td data-label="Local" className="px-5 py-3 text-sm text-rs-gray-700">{aula.local}</td>
+                          <td data-label="Capacidade" className="px-5 py-3 text-sm text-rs-gray-700">{aula.capacidade} vagas</td>
+                          <td data-acoes className="px-5 py-3 text-right">
                             {podeEditar && (
                               <button
                                 onClick={() => removerAula(aula.id)}

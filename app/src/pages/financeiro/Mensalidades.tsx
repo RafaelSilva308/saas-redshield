@@ -145,7 +145,7 @@ export function Mensalidades({ competencia }: { competencia: string }) {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left">
+            <table className="rs-tabela-cartoes w-full min-w-[760px] text-left">
               <thead>
                 <tr className="border-b border-rs-gray-200">
                   {['Aluno', 'Vencimento', 'Valor', 'Situação', 'Pago em', ''].map((h) => (
@@ -158,7 +158,7 @@ export function Mensalidades({ competencia }: { competencia: string }) {
               <tbody className="divide-y divide-rs-gray-200">
                 {itens.map((c) => (
                   <tr key={c.id} className="hover:bg-rs-gray-50">
-                    <td className="px-5 py-3">
+                    <td data-principal className="px-5 py-3">
                       <Link
                         to={`/alunos/${c.alunoId}`}
                         className="text-sm font-semibold text-rs-ink hover:text-rs-blue-600"
@@ -166,16 +166,16 @@ export function Mensalidades({ competencia }: { competencia: string }) {
                         {c.alunoNome}
                       </Link>
                     </td>
-                    <td className="px-5 py-3 text-sm text-rs-gray-700">{dataCurta(c.vencimento)}</td>
-                    <td className="px-5 py-3 text-sm font-bold text-rs-ink">{brl(c.valor)}</td>
-                    <td className="px-5 py-3">
+                    <td data-label="Vencimento" className="px-5 py-3 text-sm text-rs-gray-700">{dataCurta(c.vencimento)}</td>
+                    <td data-label="Valor" className="px-5 py-3 text-sm font-bold text-rs-ink">{brl(c.valor)}</td>
+                    <td data-label="Situação" className="px-5 py-3">
                       <Badge tom={SITUACAO[c.situacao].tom}>
                         {SITUACAO[c.situacao].label}
                         {c.diasAtraso > 0 && ` · ${c.diasAtraso} dia${c.diasAtraso > 1 ? 's' : ''}`}
                       </Badge>
                     </td>
-                    <td className="px-5 py-3 text-sm text-rs-gray-700">{c.pagoEm ? dataCurta(c.pagoEm) : '—'}</td>
-                    <td className="px-5 py-3">
+                    <td data-label="Pago em" className="px-5 py-3 text-sm text-rs-gray-700">{c.pagoEm ? dataCurta(c.pagoEm) : '—'}</td>
+                    <td data-acoes className="px-5 py-3">
                       <div className="flex justify-end gap-1.5">
                         {c.status === 'aberta' && (
                           <>

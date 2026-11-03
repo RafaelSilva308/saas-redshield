@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { CalendarPlus } from 'lucide-react'
 import type { ProximaAula } from '@/api/metricas'
 import { DIAS_SEMANA } from '@/lib/format'
+import { cn } from '@/lib/cn'
 
 /* Pedaços usados pelo painel da equipe e pelo do aluno. */
 
@@ -23,9 +24,14 @@ export function DicaGrafico({ active, payload, label, formatador }: any) {
 }
 
 /** Único bloco vermelho do painel: a próxima aula. */
-export function BlocoProximaAula({ proxima }: { proxima: ProximaAula | null }) {
+export function BlocoProximaAula({ proxima, className }: { proxima: ProximaAula | null; className?: string }) {
   return (
-    <div className="rs-diagonal relative flex flex-col justify-between overflow-hidden rounded-lg bg-rs-red-600 p-5 text-white">
+    <div
+      className={cn(
+        'rs-diagonal relative flex flex-col justify-between overflow-hidden rounded-lg bg-rs-red-600 p-4 text-white sm:p-5',
+        className,
+      )}
+    >
       <div className="relative">
         <p className="rs-label text-white/75">Próxima aula</p>
         {proxima ? (
@@ -44,7 +50,7 @@ export function BlocoProximaAula({ proxima }: { proxima: ProximaAula | null }) {
       </div>
       <Link
         to="/agenda"
-        className="relative mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-rs-red-600 transition-colors hover:bg-white/90"
+        className="relative mt-4 inline-flex h-11 items-center sm:h-10 justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-rs-red-600 transition-colors hover:bg-white/90"
       >
         <CalendarPlus className="size-4" />
         Ver agenda

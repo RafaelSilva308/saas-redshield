@@ -188,7 +188,7 @@ function Lancamentos({ mes }: { mes: string }) {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Receita do mês" valor={brl(receita)} icone={<ArrowUpRight className="size-5" />} />
         <StatCard label="Despesas do mês" valor={brl(despesa)} icone={<ArrowDownRight className="size-5" />} />
         <StatCard
@@ -318,7 +318,7 @@ function Lancamentos({ mes }: { mes: string }) {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left">
+            <table className="rs-tabela-cartoes w-full min-w-[760px] text-left">
               <thead>
                 <tr className="border-b border-rs-gray-200">
                   {['Data', 'Descrição', 'Categoria', 'Método', 'Valor', 'Situação', ''].map((h) => (
@@ -331,8 +331,8 @@ function Lancamentos({ mes }: { mes: string }) {
               <tbody className="divide-y divide-rs-gray-200">
                 {listadas.map((t) => (
                   <tr key={t.id} className="group hover:bg-rs-gray-50">
-                    <td className="px-5 py-3 text-sm text-rs-gray-700">{dataCurta(t.data)}</td>
-                    <td className="px-5 py-3">
+                    <td data-principal className="px-5 py-3 text-sm text-rs-gray-700">{dataCurta(t.data)}</td>
+                    <td data-label="Descrição" className="px-5 py-3">
                       <span className="flex items-center gap-2">
                         <span
                           aria-hidden
@@ -352,9 +352,9 @@ function Lancamentos({ mes }: { mes: string }) {
                         <span className="min-w-0 truncate text-sm font-semibold text-rs-ink">{t.descricao}</span>
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-sm text-rs-gray-700">{t.categoria}</td>
-                    <td className="px-5 py-3 text-sm text-rs-gray-700">{METODO[t.metodo]}</td>
-                    <td
+                    <td data-label="Categoria" className="px-5 py-3 text-sm text-rs-gray-700">{t.categoria}</td>
+                    <td data-label="Método" className="px-5 py-3 text-sm text-rs-gray-700">{METODO[t.metodo]}</td>
+                    <td data-label="Valor"
                       className={cn(
                         'px-5 py-3 text-sm font-bold',
                         t.tipo === 'receita' ? 'text-rs-success' : 'text-rs-ink',
@@ -362,14 +362,14 @@ function Lancamentos({ mes }: { mes: string }) {
                     >
                       {t.tipo === 'receita' ? '+' : '−'} {brl(t.valor)}
                     </td>
-                    <td className="px-5 py-3">
+                    <td data-label="Situação" className="px-5 py-3">
                       {t.cobrancaId ? (
                         <Badge tom="azul">Mensalidade</Badge>
                       ) : (
                         <Badge tom={t.conciliada ? 'ok' : 'alerta'}>{t.conciliada ? 'Conciliado' : 'A conferir'}</Badge>
                       )}
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td data-acoes className="px-5 py-3 text-right">
                       {/* Lançamento de mensalidade só sai desfazendo a baixa, na aba Mensalidades. */}
                       {!t.cobrancaId && (
                         <button
