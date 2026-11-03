@@ -67,7 +67,7 @@ export function Entrar() {
   }
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <div className="grid min-h-screen min-h-dvh grid-cols-[minmax(0,1fr)] lg:grid-cols-2">
       {/* Painel institucional — único lugar onde a geometria diagonal domina */}
       <div className="relative hidden overflow-hidden bg-rs-ink lg:flex lg:flex-col lg:justify-between lg:p-12">
         <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 600 900" preserveAspectRatio="xMidYMid slice">
@@ -111,8 +111,8 @@ export function Entrar() {
       </div>
 
       {/* Formulário */}
-      <div className="flex items-center justify-center bg-white px-6 py-12">
-        <div className="w-full max-w-sm">
+      <div className="flex items-center justify-center bg-white px-5 py-10 sm:px-6 sm:py-12">
+        <div className="w-full min-w-0 max-w-sm">
           <div className="mb-8 lg:hidden">
             <LogoMark className="size-10 text-rs-red-600" />
           </div>
@@ -194,9 +194,9 @@ export function Entrar() {
                   <li key={u.email}>
                     <button
                       onClick={() => preencher(u.email)}
-                      className="flex w-full cursor-pointer items-center justify-between gap-3 rounded px-2 py-1.5 text-left text-sm hover:bg-white"
+                      className="flex w-full min-w-0 cursor-pointer items-center justify-between gap-3 rounded px-2 py-2 text-left text-sm hover:bg-white"
                     >
-                      <span className="truncate text-rs-gray-700">{u.email}</span>
+                      <span className="min-w-0 truncate text-rs-gray-700">{u.email}</span>
                       <span className="shrink-0 text-xs font-semibold uppercase tracking-wider text-rs-blue-600">
                         {ROTULO_PAPEL[u.papel]}
                       </span>

@@ -48,7 +48,7 @@ export function PainelAluno() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
           label="Sua frequência (30 dias)"
           valor={Math.round(p.frequencia30d)}
@@ -64,7 +64,7 @@ export function PainelAluno() {
           nota="Desde a matrícula"
           para="/progresso"
         />
-        <div className="flex flex-col justify-between rounded-lg border border-rs-gray-200 bg-white p-5 shadow-[var(--shadow-card)]">
+        <div className="col-span-2 flex flex-col justify-between rounded-lg border border-rs-gray-200 bg-white p-4 shadow-[var(--shadow-card)] sm:col-span-1 sm:p-5">
           <p className="rs-label">Sua faixa</p>
           <p className="mt-3">
             <FaixaBadge faixa={p.aluno.faixa} graus={p.aluno.graus} />
@@ -73,7 +73,7 @@ export function PainelAluno() {
             <CreditCard className="size-4" /> Mensalidade: <Badge tom={pag.tom}>{pag.label}</Badge>
           </p>
         </div>
-        <BlocoProximaAula proxima={p.proximaAula} />
+        <BlocoProximaAula proxima={p.proximaAula} className="col-span-2 sm:col-span-1" />
       </div>
 
       <Card className="mt-4">

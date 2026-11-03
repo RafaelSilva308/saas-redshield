@@ -156,7 +156,7 @@ function ListaChamada({ aula, data, turma }: { aula: Aula; data: string; turma: 
   return (
     <div className="grid gap-4 lg:grid-cols-4">
       {/* Resumo da aula */}
-      <Card className="lg:col-span-1 lg:order-2 lg:sticky lg:top-20 lg:self-start">
+      <Card className="order-2 lg:col-span-1 lg:sticky lg:top-20 lg:self-start">
         <CardHeader titulo="Resumo" descricao={dataLonga(data)} />
         <CardBody className="space-y-4">
           <div>
@@ -253,7 +253,7 @@ function ListaChamada({ aula, data, turma }: { aula: Aula; data: string; turma: 
       </Card>
 
       {/* Lista de presença */}
-      <Card className="lg:col-span-3 lg:order-1">
+      <Card className="order-1 lg:col-span-3">
         <CardHeader titulo="Presenças" descricao={`${todos.length} alunos das turmas desta aula`} />
         <div className="border-b border-rs-gray-200 px-4 py-3 sm:px-5">
           <Input

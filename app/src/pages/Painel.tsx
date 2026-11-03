@@ -12,6 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { useCelular } from '@/lib/tela'
 import { AlertTriangle, CalendarPlus, ClipboardCheck, TrendingUp, UserPlus, Users, Wallet } from 'lucide-react'
 import { Carregando, EmptyState, ErroCarga, PageHeader, Progress, ProgressRing } from '@/components/ui/Misc'
 import { StatCard } from '@/components/ui/StatCard'
@@ -47,6 +48,7 @@ const somaDias = (iso: string, n: number) => {
 
 function PainelEquipe() {
   const { usuario } = useAuth()
+  const celular = useCelular()
   const ehGestor = usuario?.papel === 'gestor'
 
   const painel = usePainelEquipe()
@@ -113,7 +115,7 @@ function PainelEquipe() {
       />
 
       {/* Indicadores principais */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
           label="Alunos ativos"
           valor={p.alunosAtivos}
@@ -136,6 +138,7 @@ function PainelEquipe() {
             icone={<Wallet className="size-5" />}
             nota={`Mês em curso · recorrência ${brl(gestor.mrr)}/mês`}
             para="/financeiro"
+            className="col-span-2 sm:col-span-1"
           />
         ) : (
           <StatCard
@@ -144,10 +147,11 @@ function PainelEquipe() {
             icone={<AlertTriangle className="size-5" />}
             nota="Alunos ativos sem presença"
             para="/alunos"
+            className="col-span-2 sm:col-span-1"
           />
         )}
 
-        <BlocoProximaAula proxima={proxima} />
+        <BlocoProximaAula proxima={proxima} className="col-span-2 sm:col-span-1" />
       </div>
 
       {/* Alertas operacionais — só aparecem quando existe algo a resolver */}
@@ -356,7 +360,16 @@ function PainelEquipe() {
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={ocupacao} margin={{ top: 8, right: 12, bottom: 0, left: 4 }}>
                 <CartesianGrid stroke="#e4e8ed" vertical={false} />
-                <XAxis dataKey="turma" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#667085' }} />
+                <XAxis
+                  dataKey="turma"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: celular ? 11 : 12, fill: '#667085' }}
+                  interval={0}
+                  angle={celular ? -35 : 0}
+                  textAnchor={celular ? 'end' : 'middle'}
+                  height={celular ? 56 : 30}
+                />
                 <YAxis tickLine={false} axisLine={false} width={32} tick={{ fontSize: 12, fill: '#667085' }} />
                 <Tooltip content={<DicaGrafico />} cursor={{ fill: '#f2f4f6' }} />
                 <Bar dataKey="mediaPresentes" name="Média de presentes" radius={[4, 4, 0, 0]} maxBarSize={54}>

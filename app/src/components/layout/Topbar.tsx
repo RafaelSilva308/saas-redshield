@@ -44,7 +44,7 @@ export function Topbar({ aoAbrirMenu }: { aoAbrirMenu: () => void }) {
       <button
         onClick={aoAbrirMenu}
         aria-label="Abrir menu"
-        className="grid size-9 cursor-pointer place-items-center rounded-md text-white/80 hover:bg-white/10 hover:text-white lg:hidden"
+        className="-ml-2 grid size-10 cursor-pointer place-items-center rounded-md text-white/80 hover:bg-white/10 hover:text-white lg:hidden"
       >
         <Menu className="size-5" />
       </button>
@@ -58,7 +58,7 @@ export function Topbar({ aoAbrirMenu }: { aoAbrirMenu: () => void }) {
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar aluno"
             aria-label="Buscar aluno"
-            className="h-9 w-full rounded-md border border-white/20 bg-white/10 pl-9 pr-3 text-sm text-white placeholder:text-white/55 focus:border-white/40 focus:bg-white/15 focus:outline-none"
+            className="h-10 w-full rounded-md border border-white/20 bg-white/10 pl-9 pr-3 text-sm text-white placeholder:text-white/55 focus:border-white/40 focus:bg-white/15 focus:outline-none"
           />
           {resultados.length > 0 && (
             <ul className="absolute left-0 right-0 top-11 z-30 overflow-hidden rounded-md border border-rs-gray-200 bg-white py-1 shadow-[var(--shadow-pop)]">
@@ -92,7 +92,7 @@ export function Topbar({ aoAbrirMenu }: { aoAbrirMenu: () => void }) {
                 setMenuAberto(false)
               }}
               aria-label={`Notificações: ${pendencias} pendências`}
-              className="relative grid size-9 cursor-pointer place-items-center rounded-md text-white/80 hover:bg-white/10 hover:text-white"
+              className="relative grid size-10 cursor-pointer place-items-center rounded-md text-white/80 hover:bg-white/10 hover:text-white"
             >
               <Bell className="size-5" />
               {pendencias > 0 && (
@@ -103,7 +103,7 @@ export function Topbar({ aoAbrirMenu }: { aoAbrirMenu: () => void }) {
             </button>
 
             {notifAberta && (
-              <div className="absolute right-0 top-11 w-80 overflow-hidden rounded-md border border-rs-gray-200 bg-white shadow-[var(--shadow-pop)]">
+              <div className="absolute right-0 top-12 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-md border border-rs-gray-200 bg-white shadow-[var(--shadow-pop)]">
                 <p className="rs-label border-b border-rs-gray-200 px-4 py-3">Pendências</p>
                 <ul className="max-h-72 divide-y divide-rs-gray-200 overflow-y-auto">
                   {atrasados.length === 0 && (
