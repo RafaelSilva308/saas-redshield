@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { Award, TrendingUp } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useCelular } from '@/lib/tela'
+import { useAuth } from '@/app/auth'
+import { ProgressoAluno } from './progresso/ProgressoAluno'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Badge, FaixaBadge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
@@ -19,6 +21,11 @@ const MESES_MINIMOS = 12
 const FREQUENCIA_MINIMA = 70
 
 export function Progresso() {
+  const { usuario } = useAuth()
+  return usuario?.papel === 'aluno' ? <ProgressoAluno /> : <ProgressoEquipe />
+}
+
+function ProgressoEquipe() {
   const celular = useCelular()
   const { alunos } = useStore()
   const [aba, setAba] = useState<'panorama' | 'elegiveis'>('panorama')
