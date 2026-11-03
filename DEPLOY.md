@@ -9,7 +9,9 @@ O código está pronto para isto; o que falta são **contas e segredos**, que s�
 ## 2. Aplicação (Railway)
 1. Novo projeto → *Deploy from GitHub repo*. O `railway.json` e o `Dockerfile` da raiz já definem build, migração (`preDeployCommand`) e *healthcheck* (`/saude`).
 2. Variáveis:
-   - `DATABASE_URL` = papel `redshield_app`; `MIGRATION_DATABASE_URL` = papel `redshield_migracao`
+   - `DATABASE_URL` = papel `redshield_app`, conexão **com pool** (host com `-pooler`)
+   - `MIGRATION_DATABASE_URL` = papel `redshield_migracao`, conexão **direta** (host sem `-pooler`): a migração usa `pg_advisory_lock`, que não funciona atrás do pool em modo transação
+   - As duas com `?sslmode=require`. O `BACKUP_DATABASE_URL` (passo 3) também usa a conexão direta.
    - `URL_PUBLICA` = endereço público (https)
    - `RESEND_API_KEY`, `EMAIL_REMETENTE` (domínio verificado no Resend)
    - `ROTINAS=1` em **uma** instância só; `HORA_DOS_AVISOS=8`
