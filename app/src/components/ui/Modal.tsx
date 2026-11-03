@@ -50,7 +50,7 @@ export function Modal({
         aria-label={titulo}
         tabIndex={-1}
         className={cn(
-          'relative z-10 flex max-h-[92vh] w-full flex-col rounded-t-xl bg-white shadow-[var(--shadow-pop)] sm:rounded-lg',
+          'relative z-10 flex max-h-[92vh] max-h-[92dvh] w-full flex-col rounded-t-xl bg-white shadow-[var(--shadow-pop)] sm:rounded-lg',
           larguras[largura],
         )}
       >
@@ -62,7 +62,7 @@ export function Modal({
           <button
             onClick={aoFechar}
             aria-label="Fechar"
-            className="-mr-1 grid size-8 shrink-0 cursor-pointer place-items-center rounded-md text-rs-gray-500 hover:bg-rs-gray-100 hover:text-rs-ink"
+            className="-mr-2 grid size-10 shrink-0 cursor-pointer place-items-center rounded-md text-rs-gray-500 hover:bg-rs-gray-100 hover:text-rs-ink"
           >
             <X className="size-5" />
           </button>
@@ -71,7 +71,7 @@ export function Modal({
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">{children}</div>
 
         {rodape && (
-          <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-rs-gray-200 bg-rs-gray-50 px-4 py-4 sm:px-6">
+          <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-rs-gray-200 bg-rs-gray-50 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:pb-4">
             {rodape}
           </footer>
         )}

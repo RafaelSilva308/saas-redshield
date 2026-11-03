@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { useCelular } from '@/lib/tela'
 import { AlertTriangle, CalendarCheck, CalendarPlus, ClipboardCheck, TrendingUp, UserPlus, Users, Wallet } from 'lucide-react'
 import { PageHeader, Progress, ProgressRing } from '@/components/ui/Misc'
 import { StatCard } from '@/components/ui/StatCard'
@@ -58,6 +59,7 @@ function DicaGrafico({ active, payload, label, formatador }: any) {
 }
 
 export function Painel() {
+  const celular = useCelular()
   const { usuario } = useAuth()
   const ativos = alunosAtivos()
   const proxima = proximaAula()
@@ -114,7 +116,7 @@ export function Painel() {
       />
 
       {/* Indicadores principais */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
           label="Alunos ativos"
           valor={ativos.length}
@@ -137,6 +139,7 @@ export function Painel() {
             icone={<Wallet className="size-5" />}
             nota={`Mês em curso · recorrência ${brl(mrr())}/mês`}
             para="/financeiro"
+            className="col-span-2 sm:col-span-1"
           />
         ) : (
           <StatCard
@@ -145,11 +148,12 @@ export function Painel() {
             icone={<UserPlus className="size-5" />}
             nota="Neste mês"
             para="/alunos"
+            className="col-span-2 sm:col-span-1"
           />
         )}
 
         {/* Único bloco vermelho do painel: a ação de conversão do dia */}
-        <div className="rs-diagonal relative flex flex-col justify-between overflow-hidden rounded-lg bg-rs-red-600 p-5 text-white">
+        <div className="rs-diagonal relative col-span-2 flex flex-col justify-between overflow-hidden rounded-lg bg-rs-red-600 p-4 text-white sm:col-span-1 sm:p-5">
           <div className="relative">
             <p className="rs-label text-white/75">Próxima aula</p>
             {proxima ? (
@@ -168,7 +172,7 @@ export function Painel() {
           </div>
           <Link
             to="/agenda"
-            className="relative mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-rs-red-600 transition-colors hover:bg-white/90"
+            className="relative mt-4 inline-flex h-11 items-center sm:h-10 justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-rs-red-600 transition-colors hover:bg-white/90"
           >
             <CalendarPlus className="size-4" />
             Ver agenda
@@ -345,7 +349,16 @@ export function Painel() {
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={ocupacaoTurmas()} margin={{ top: 8, right: 12, bottom: 0, left: 4 }}>
                 <CartesianGrid stroke="#e4e8ed" vertical={false} />
-                <XAxis dataKey="turma" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#667085' }} />
+                <XAxis
+                  dataKey="turma"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: celular ? 11 : 12, fill: '#667085' }}
+                  interval={0}
+                  angle={celular ? -35 : 0}
+                  textAnchor={celular ? 'end' : 'middle'}
+                  height={celular ? 56 : 30}
+                />
                 <YAxis tickLine={false} axisLine={false} width={32} tick={{ fontSize: 12, fill: '#667085' }} />
                 <Tooltip content={<DicaGrafico />} cursor={{ fill: '#f2f4f6' }} />
                 <Bar dataKey="mediaPresentes" name="Média de presentes" radius={[4, 4, 0, 0]} maxBarSize={54}>

@@ -40,7 +40,7 @@ export function Sidebar({ aberta, aoFechar }: { aberta: boolean; aoFechar: () =>
 
   const link = ({ isActive }: { isActive: boolean }) =>
     cn(
-      'relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors',
+      'relative flex items-center gap-3 rounded-md px-3 py-3 text-sm font-semibold lg:py-2.5 transition-colors',
       isActive ? 'bg-white/12 text-white' : 'text-white/70 hover:bg-white/8 hover:text-white',
     )
 
@@ -51,7 +51,7 @@ export function Sidebar({ aberta, aoFechar }: { aberta: boolean; aoFechar: () =>
         <button
           onClick={aoFechar}
           aria-label="Fechar menu"
-          className="grid size-8 cursor-pointer place-items-center rounded-md text-white/70 hover:bg-white/10 hover:text-white lg:hidden"
+          className="-mr-2 grid size-10 cursor-pointer place-items-center rounded-md text-white/70 hover:bg-white/10 hover:text-white lg:hidden"
         >
           <X className="size-5" />
         </button>
@@ -94,7 +94,7 @@ export function Sidebar({ aberta, aoFechar }: { aberta: boolean; aoFechar: () =>
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-rs-blue-600 transition-transform duration-200 lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex w-64 max-w-[85vw] flex-col bg-rs-blue-600 pb-[env(safe-area-inset-bottom)] lg:max-w-none transition-transform duration-200 lg:translate-x-0',
           aberta ? 'translate-x-0' : '-translate-x-full',
         )}
       >

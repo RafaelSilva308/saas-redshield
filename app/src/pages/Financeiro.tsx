@@ -126,7 +126,7 @@ export function Financeiro() {
         <p className="text-sm text-rs-gray-500">{doMes.length} lançamentos no período</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Receita do mês" valor={brl(receita)} icone={<ArrowUpRight className="size-5" />} />
         <StatCard label="Despesas do mês" valor={brl(despesa)} icone={<ArrowDownRight className="size-5" />} />
         <StatCard
@@ -225,7 +225,7 @@ export function Financeiro() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left">
+            <table className="rs-tabela-cartoes w-full min-w-[760px] text-left">
               <thead>
                 <tr className="border-b border-rs-gray-200">
                   {['Data', 'Descrição', 'Categoria', 'Método', 'Valor', 'Situação', ''].map((h) => (
@@ -238,8 +238,8 @@ export function Financeiro() {
               <tbody className="divide-y divide-rs-gray-200">
                 {listadas.map((t) => (
                   <tr key={t.id} className="group hover:bg-rs-gray-50">
-                    <td className="px-5 py-3 text-sm text-rs-gray-700">{dataCurta(t.data)}</td>
-                    <td className="px-5 py-3">
+                    <td data-principal className="px-5 py-3 text-sm text-rs-gray-700">{dataCurta(t.data)}</td>
+                    <td data-label="Descrição" className="px-5 py-3">
                       <span className="flex items-center gap-2">
                         <span
                           aria-hidden
@@ -253,15 +253,15 @@ export function Financeiro() {
                         <span className="min-w-0 truncate text-sm font-semibold text-rs-ink">{t.descricao}</span>
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-sm text-rs-gray-700">{t.categoria}</td>
-                    <td className="px-5 py-3 text-sm capitalize text-rs-gray-700">{t.metodo}</td>
-                    <td className={cn('px-5 py-3 text-sm font-bold', t.tipo === 'receita' ? 'text-rs-success' : 'text-rs-ink')}>
+                    <td data-label="Categoria" className="px-5 py-3 text-sm text-rs-gray-700">{t.categoria}</td>
+                    <td data-label="Método" className="px-5 py-3 text-sm capitalize text-rs-gray-700">{t.metodo}</td>
+                    <td data-label="Valor" className={cn('px-5 py-3 text-sm font-bold', t.tipo === 'receita' ? 'text-rs-success' : 'text-rs-ink')}>
                       {t.tipo === 'receita' ? '+' : '−'} {brl(t.valor)}
                     </td>
-                    <td className="px-5 py-3">
+                    <td data-label="Situação" className="px-5 py-3">
                       <Badge tom={t.conciliada ? 'ok' : 'alerta'}>{t.conciliada ? 'Conciliado' : 'A conferir'}</Badge>
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td data-acoes className="px-5 py-3 text-right">
                       <button
                         onClick={() => removerTransacao(t.id)}
                         aria-label={`Remover ${t.descricao}`}
