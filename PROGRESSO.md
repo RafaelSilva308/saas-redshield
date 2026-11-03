@@ -2,7 +2,7 @@
 
 Registro vivo do desenvolvimento. **Atualize ao fim de cada sessão.** O plano e as decisões continuam no [`ROADMAP.md`](./ROADMAP.md) (fonte de verdade); aqui fica o estado da execução.
 
-Última atualização: 2026-11-03 · `feat/front-api` mergeada na `main` (PR #6). **Sistema no ar na Railway + Neon, com banco vazio; ver "Deploy em andamento".**
+Última atualização: 2026-11-03 (fim do dia) · PRs #6 a #12 mergeados. **Sistema no ar na Railway + Neon, com banco vazio; telas responsivas no celular; ver "Deploy em andamento" e "Registro de 2026-11-03".**
 
 ## Como rodar o back-end (`server/`)
 
@@ -64,10 +64,29 @@ npm run rotinas          # roda uma vez as rotinas (cobranças do mês e avisos)
 7. **Ao terminar a configuração:** o dono apaga os tokens (`NEON_API_KEY`, `RAILWAY_TOKEN`) nas contas e nas variáveis do ambiente.
 8. Menores: o aviso do `pg` sobre `sslmode=require` (será tratado como `verify-full` hoje; mudar a URL para `sslmode=verify-full` mantém o comportamento quando o `pg` 9 sair); migrar a configuração da Railway para `.railway/railway.ts` se quisermos ela de volta no código.
 
+## Registro de 2026-11-03
+
+O que foi feito nesta sessão, em ordem. Os PRs estão em `RafaelSilva308/saas-redshield`.
+
+| # | O quê | Onde |
+|---|---|---|
+| 1 | **GitHub Pages da branch `prototipo` destravado.** O deploy falhava porque o ambiente `github-pages` só aceitava a `main`; o dono liberou a `prototipo` em *Settings → Environments* e o deploy passou | Configuração do repositório |
+| 2 | **Front ligado à API entrou na `main`** (`feat/front-api`). CI verde; 81 testes do servidor e 16 do front | PR #6 |
+| 3 | **Backup corrigido:** scripts sem bit de execução (*Permission denied* todo dia desde 13/10) e passo que engolia a falha do `pg_dump`. Backup e restauração testados localmente | PR #7 |
+| 4 | **Neon configurada:** projeto `Redshield-SaaS`, São Paulo, PG 16; papéis criados por `db/papeis.sql`, que ganhou a correção do PG 16 (`grant redshield_migracao to current_user`) | PR #8 |
+| 5 | **Railway configurada e no ar:** variáveis, domínio público, pre-deploy da migração e healthcheck direto no serviço (a Railway ignora o `railway.json`), região `us-east4` (opção B, decisão do dono). 3 migrações aplicadas; banco vazio | PR #8 (docs) |
+| 6 | **Custos mensais** revisados e registrados (~R$ 32/mês mínimo; cenários) | `ROADMAP.md` 4.2 e 4.5, PR #9 |
+| 7 | **Responsividade de todas as telas**, foco no celular (ver tabela do front abaixo) | PR #10 (`main`) |
+| 8 | **Mesma responsividade no protótipo** | PR #11 (`prototipo`) |
+| 9 | **Protótipo: aluno vê só os próprios dados** (defeito 8): painel e progresso do aluno separados, busca e sino só para a equipe, próxima aula das turmas do aluno | PR #12 (`prototipo`) |
+| 10 | **Apresentação do sistema** (deck de slides, fora do repositório): nome e contato do apresentador, card de WhatsApp removido, prazos de implantação em 1 + 2 + 2 semanas + piloto de 30 dias | Artifact de slides do dono |
+
+**Decisões do dono registradas hoje:** servidor na Virgínia com banco em São Paulo (opção B) até migrar para um servidor no Brasil; Vercel fora; protótipo mantido no GitHub Pages para demonstrar com dados fictícios; dados da academia (nome, gestor, e-mail) serão enviados depois.
+
 ## Falta
 
 **Depende de você (contas e decisões)**
-- [ ] Criar os projetos **novos** na Neon e na Railway e preencher variáveis/segredos (passo a passo em `DEPLOY.md`). Nada disso foi executado: o `Dockerfile`, o `railway.json` e os fluxos de CI/backup **nunca rodaram** (sem Docker nem `pg_dump` no ambiente de desenvolvimento). Confira o primeiro CI e rode o backup manualmente (*Run workflow*) para ver o teste de restauração passar.
+- [x] ~~Criar os projetos na Neon e na Railway~~: feitos em 2026-11-03. O que resta da infraestrutura (academia, backup, e-mail, monitor, tokens) está em "Deploy em andamento → Pendente".
 - [ ] Conta no Resend com domínio verificado (SPF/DKIM/DMARC), UptimeRobot e, opcionalmente, Sentry.
 - [ ] **V1**: nome/INPI/domínio; retirar `referencia_visual_conceitual.png` do repositório antes de divulgar.
 - [ ] Revisão jurídica da política de privacidade e página/link dela dentro do sistema.
@@ -93,6 +112,7 @@ npm run rotinas          # roda uma vez as rotinas (cobranças do mês e avisos)
 | Configurações | Dados da academia (gestor edita), avisos automáticos, troca da própria senha | `pages/Configuracoes.tsx` |
 | Importação e LGPD | Importar alunos por CSV (conferir sem gravar → confirmar; lê UTF-8 e o CSV do Excel em Windows-1252; modelo para baixar); na ficha, baixar os dados do aluno e anonimizar com a palavra ANONIMIZAR, ficha travada depois. Só gestor | `pages/alunos/ImportarAlunos.tsx`, `pages/alunos/DadosPessoais.tsx` |
 | Servidor | `GET /eu/presencas`: o aluno lê o próprio histórico (com teste de isolamento); `anonimizado` no cadastro do aluno | `server/src/rotas/alunos.ts` |
+| Responsividade | Auditoria em 320, 360, 768 e 1280 px (todas as rotas, abas e janelas, nos três papéis). Campos com 16 px no celular (sem zoom do iPhone); alvos de toque de 40 px; janelas em `dvh` com área segura; aba ativa sempre à vista; alunos em cartões abaixo de 1024 px; tabelas largas viram cartões abaixo de 768 px; indicadores em duas colunas; rótulos de gráfico inclinados no celular. Nenhuma tela transborda. **Testado só em emulação do Chromium, não em aparelho real** | `index.css`, `lib/tela.ts`, `components/ui/`, páginas |
 | Servidor | `WEB_DIST` relativo (como no `.env.example`) derrubava a API ao subir; agora é resolvido para caminho absoluto. Verificado: API servindo o build do front na mesma origem, com a CSP de produção e os gráficos | `server/src/config.ts` |
 
 - `mock.ts`, `selectors.ts` e `store.tsx` foram apagados. O protótipo com dados simulados ficou congelado na branch **`prototipo`**, e o GitHub Pages passou a publicar só ela.
@@ -100,6 +120,9 @@ npm run rotinas          # roda uma vez as rotinas (cobranças do mês e avisos)
 - Backup: os scripts de `scripts/` estavam sem permissão de execução no Git, e o backup diário falhava com *Permission denied* desde que entrou na `main`. Corrigido, e o fluxo não engole mais a falha do `pg_dump`. Backup e restauração testados localmente (PG 16, banco com seed). Continua falhando todo dia até os segredos `BACKUP_*` existirem: é o esperado.
 
 ## Pontos de atenção
+
+- **Tabela larga no celular:** marque a `<table>` com `rs-tabela-cartoes` e cada célula do corpo com `data-principal` (a primeira), `data-label="Rótulo"` ou `data-acoes`; o CSS em `index.css` faz o resto abaixo de 768 px. Para o que o CSS não resolve (eixos de gráfico), use `useCelular()` de `lib/tela.ts`.
+- **Protótipo:** mudanças nele vão numa branch criada a partir da `prototipo`, com PR para a **`prototipo`** (nunca para a `main`); o merge publica no GitHub Pages. As duas branches divergiram de propósito: nunca juntar uma na outra.
 
 - Check-in **não** aplica a capacidade da aula (decisão não tomada).
 - `GET /planos` também é lido pelo professor (o contrato original só previa o gestor).
