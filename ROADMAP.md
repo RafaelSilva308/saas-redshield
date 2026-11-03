@@ -321,7 +321,7 @@ O modelo em `db/schema.sql` serve para as três opções. O que muda entre elas 
 
 **Railway, plano de US$ 5:**
 - Inclui US$ 5 de uso por mês e **cobra o excedente**. Como a conta já tem outro projeto, o REDSHIELD entra no **mesmo crédito**. Uma API pequena usa pouca memória, mas **monitore o consumo** e defina um limite de gasto.
-- **Confirme a região** da Railway mais próxima do Brasil; latência de outra região é perceptível, mas aceitável para este uso.
+- **Região:** a Railway não tem região no Brasil. Adotado `us-east4` (Virgínia), a mais próxima do banco na Neon em São Paulo (decisão do dono, 2026-11-03; migrar para servidor no Brasil é um plano futuro).
 
 **Vercel:** não usar em produção (ver D8). O projeto que você já tem pode continuar como está.
 
@@ -358,16 +358,37 @@ Não é automação, mas resolve o problema de "como cobrar" sem pagar a API ofi
 | Pix automático (pós-lançamento) | Mercado Pago, Asaas ou similar — **cobram taxa por transação** | variável |
 | WhatsApp oficial (pós-lançamento) | API oficial — cobra por conversa | variável |
 
-### 4.5 Custo mensal por etapa (arquitetura adotada)
+### 4.5 Custo mensal (arquitetura adotada, revisado em 2026-11-03)
 
-| Etapa | Custo adicional | Observação |
+Valores aproximados, com o dólar a cerca de R$ 5,50. **Os preços de Neon, Resend e Railway são estimativas e mudam com frequência: confirmar nos sites antes de fechar valor com a academia.**
+
+**Configuração atual (v1 no ar):**
+
+| Item | Para que serve | Custo/mês |
 |---|---|---|
-| Construção e piloto | **~R$ 3** | Domínio (~R$ 40/ano). Neon, Resend e GitHub Actions gratuitos. A Railway já é paga; atenção ao crédito compartilhado |
-| Operação, mínimo | ~R$ 3 | Igual ao piloto. **Sem backup gerenciado**: só o `pg_dump` que montamos |
-| Operação recomendada | + poucos dólares | Neon em plano pago por uso (mais histórico de restauração e banco sempre disponível, se configurado). Confirmar preço |
-| Se o volume de e-mail crescer | + ~R$ 50 a R$ 110 | Resend ou Brevo pago |
-| Se a API passar do crédito da Railway | + excedente por uso | Definir alerta e limite de gasto |
-| Pix automático | + taxa por cobrança | Só depois do lançamento e de **V6** |
+| Railway (Hobby) | Servidor da API, que também serve o front | **US$ 5 (~R$ 28)**, fixo enquanto o uso **da conta inteira** ficar abaixo do crédito de US$ 5 |
+| Domínio `.com.br` (registro.br) | Endereço próprio e remetente dos e-mails | ~R$ 40/ano, **~R$ 3,50/mês** |
+| Neon (gratuito) | Banco de dados | R$ 0 |
+| Resend (gratuito) | E-mails automáticos e recuperação de senha | R$ 0, até **100/dia** e 3.000/mês |
+| Cloudflare R2 ou Backblaze B2 | Cópias diárias do backup | R$ 0, até 10 GB |
+| GitHub Actions | CI e backup diário | R$ 0, dentro dos minutos gratuitos |
+| UptimeRobot | Alerta de queda | R$ 0 |
+| Sentry (opcional) | Registro de erros | R$ 0 |
+| **Total mínimo** | | **~R$ 32/mês** |
+
+**Como a Railway cobra:** por minuto ligado, somando memória (~US$ 10 por GB/mês), processador (~US$ 20 por vCPU/mês) e tráfego de saída (~US$ 0,05 por GB). A API fica ligada 24 h (as rotinas exigem) e usa ~100 a 200 MB, o que dá **~US$ 2 a 3/mês** só para o REDSHIELD. O volume de acessos de uma academia (centenas de check-ins por dia) soma segundos de processador por dia e quase não pesa. **A conta da Railway tem outro projeto, que divide o mesmo crédito:** conferir a página *Usage* somando os dois.
+
+**O que pode aumentar a conta:**
+
+| Situação | Custo a mais (aprox.) | Quando |
+|---|---|---|
+| Neon pago | De poucos dólares a ~US$ 20/mês (confirmar o plano) | O gratuito tem pouco espaço, suspende o banco sem uso (primeira abertura do dia mais lenta) e não tem backup próprio. **Recomendado antes de entrar dado real de muitos alunos** |
+| Resend pago | ~US$ 20/mês (~R$ 110) | Mais de 100 e-mails por dia; antes, considerar espalhar os vencimentos (**E3**) |
+| Excedente da Railway | Por uso | Ambiente de demonstração, outra academia, ou o outro projeto da conta |
+| VPS no Brasil (no lugar da Railway) | ~R$ 30 a 50/mês | Só se houver lentidão medida, conta da Railway acima de ~US$ 10 ou recomendação jurídica (LGPD). Exige manter atualizações, HTTPS, monitoramento e deploy por conta própria |
+| Pix automático | Taxa por cobrança | Pós-lançamento, depois de **V6** |
+
+**Resumo:** mínimo **~R$ 32/mês**; recomendado para operar com dados reais (Neon pago) **~R$ 60 a 140/mês**; com volume alto de e-mail, mais ~R$ 110.
 
 ---
 
