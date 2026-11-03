@@ -42,6 +42,13 @@ npm run rotinas          # roda uma vez as rotinas (cobranças do mês e avisos)
 | Infra como código | `Dockerfile` (API serve o front), `railway.json` (migra antes do deploy, healthcheck `/saude`), CI, backup diário criptografado **com teste de restauração**, papéis de banco de mínimo privilégio | `Dockerfile`, `.github/workflows/`, `scripts/`, `db/papeis.sql` |
 | Documentos | Passo a passo de deploy; modelo de política de privacidade (precisa de revisão jurídica) | `DEPLOY.md`, `POLITICA_DE_PRIVACIDADE.md` |
 
+## Deploy em andamento (2026-11-03)
+
+- **Neon:** projeto `Redshield-SaaS`, branch `production`, banco `neondb`. Os papéis `redshield_migracao`, `redshield_app` e `redshield_backup` foram criados e as concessões padrão conferidas em `pg_default_acl`. As senhas ficam com o dono do produto (nunca no chat nem no repositório). **Região e versão do PostgreSQL ainda não conferidas** (o esperado é `sa-east-1` e PG 16).
+- **Railway:** ainda não configurada.
+- O ambiente de nuvem do Claude libera `console.neon.tech` e `backboard.railway.com`. Os tokens entram como variáveis do ambiente (`NEON_API_KEY`, de escopo do projeto, e `RAILWAY_TOKEN`, um *Project Token*), **nunca colados no chat**; apagar os dois ao terminar.
+- Próximo passo: endereços de conexão (app com pool, migração e backup diretos; ver `DEPLOY.md`), variáveis na Railway, domínio público, primeiro deploy.
+
 ## Falta
 
 **Depende de você (contas e decisões)**
