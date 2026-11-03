@@ -2,7 +2,7 @@
 
 Registro vivo do desenvolvimento. **Atualize ao fim de cada sessão.** O plano e as decisões continuam no [`ROADMAP.md`](./ROADMAP.md) (fonte de verdade); aqui fica o estado da execução.
 
-Última atualização: 2026-11-03 · `feat/front-api` mergeada na `main` (PR #6). **Servidor completo para a v1 e front ligado à API, com todas as telas; faltam as contas de infraestrutura e as decisões do dono.**
+Última atualização: 2026-11-03 · `feat/front-api` mergeada na `main` (PR #6). **Sistema no ar na Railway + Neon, com banco vazio; ver "Deploy em andamento".**
 
 ## Como rodar o back-end (`server/`)
 
@@ -41,6 +41,28 @@ npm run rotinas          # roda uma vez as rotinas (cobranças do mês e avisos)
 | Segurança HTTP | CSP (só o Google Fonts como origem externa), nosniff, X-Frame-Options, Referrer-Policy, HSTS em produção, `no-store` na API | `src/app.ts` |
 | Infra como código | `Dockerfile` (API serve o front), `railway.json` (migra antes do deploy, healthcheck `/saude`), CI, backup diário criptografado **com teste de restauração**, papéis de banco de mínimo privilégio | `Dockerfile`, `.github/workflows/`, `scripts/`, `db/papeis.sql` |
 | Documentos | Passo a passo de deploy; modelo de política de privacidade (precisa de revisão jurídica) | `DEPLOY.md`, `POLITICA_DE_PRIVACIDADE.md` |
+
+## Deploy em andamento (atualizado em 2026-11-03)
+
+**Quando o dono do produto perguntar "o que falta fazer?", responda a partir da lista "Pendente" abaixo, na ordem.**
+
+### Feito
+- **Neon:** projeto `Redshield-SaaS` (id `square-sky-31126079`), região **`aws-sa-east-1` (São Paulo)**, **PostgreSQL 16**, branch `production`, banco `neondb`. Papéis `redshield_migracao`, `redshield_app` e `redshield_backup` criados por `db/papeis.sql` (já com a correção do PG 16); concessões conferidas em `pg_default_acl`. As senhas ficam com o dono do produto, no gerenciador de senhas do Google, e **nunca** passam pelo chat nem pelo repositório.
+- **Railway:** serviço `saas-redshield` ligado à branch `main`, região **`us-east4` (Virgínia)** (opção B: decisão do dono; a Railway não tem região no Brasil, e ele pretende migrar para um servidor no Brasil no futuro). Endereço: **https://saas-redshield-production.up.railway.app**.
+  - Variáveis: `DATABASE_URL` (`redshield_app`, host com `-pooler`), `MIGRATION_DATABASE_URL` (`redshield_migracao`, host direto), `URL_PUBLICA`, `ROTINAS=1`, `HORA_DOS_AVISOS=8`.
+  - Pre-deploy `node dist/db/migrar.js`, healthcheck `/saude`, configurados direto no serviço (a Railway ignora o `railway.json`; ver `DEPLOY.md`).
+  - As 3 migrações rodaram; o deploy passou no healthcheck. O banco está **vazio** (sem academia nem usuário).
+- Acesso do Claude: o ambiente de nuvem libera `console.neon.tech` e `backboard.railway.com`; tokens nas variáveis do ambiente `NEON_API_KEY` (escopo do projeto) e `RAILWAY_TOKEN` (*Project Token*, cabeçalho `Project-Access-Token` na API GraphQL). O ambiente **não** alcança o PostgreSQL da Neon (sem DNS/porta 5432) nem o endereço público da Railway.
+
+### Pendente (nesta ordem)
+1. **Criar a academia e o primeiro gestor. Aguardando o dono enviar: nome da academia, nome do gestor e e-mail do gestor.** Como fazer daqui (sem acesso direto ao banco): criar na Railway as variáveis `ACADEMIA_NOME`, `GESTOR_NOME`, `GESTOR_EMAIL`; trocar o pre-deploy, por um deploy, para `node dist/db/migrar.js && node dist/db/nova-academia.js`; conferir no log "Academia criada"; **voltar o pre-deploy** para só a migração e apagar as 3 variáveis (o script não é idempotente: rodar de novo duplica a academia).
+2. **Senha do gestor:** ele usa "Esqueci minha senha". Sem `RESEND_API_KEY` o e-mail só sai no log da Railway; pegar o link lá e entregar ao dono.
+3. **Conferir no navegador** (pelo dono, o ambiente do Claude não abre o site): tela de login, entrar como gestor, cadastrar um plano e um aluno.
+4. **Backup:** segredos `BACKUP_*` no GitHub (o `BACKUP_DATABASE_URL` usa `redshield_backup` e o host **direto**), bucket S3-compatível (Cloudflare R2 ou Backblaze B2) e a senha de criptografia guardada pelo dono fora do GitHub. Depois, rodar o fluxo *Backup do banco* manualmente e ver a restauração passar. Até lá ele falha todo dia (esperado).
+5. **E-mail (Resend):** depende de domínio próprio verificado (pendência V1: nome/INPI/domínio). Depois, `RESEND_API_KEY` e `EMAIL_REMETENTE` na Railway.
+6. **Monitoramento:** UptimeRobot apontando para `/saude`.
+7. **Ao terminar a configuração:** o dono apaga os tokens (`NEON_API_KEY`, `RAILWAY_TOKEN`) nas contas e nas variáveis do ambiente.
+8. Menores: o aviso do `pg` sobre `sslmode=require` (será tratado como `verify-full` hoje; mudar a URL para `sslmode=verify-full` mantém o comportamento quando o `pg` 9 sair); migrar a configuração da Railway para `.railway/railway.ts` se quisermos ela de volta no código.
 
 ## Falta
 

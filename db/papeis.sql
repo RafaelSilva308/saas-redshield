@@ -14,6 +14,9 @@ grant create, usage on schema public to redshield_migracao;
 grant usage on schema public to redshield_app, redshield_backup;
 
 -- O que a migração criar passa a valer para os outros papéis automaticamente.
+-- No PostgreSQL 16, quem criou o papel não é membro dele, e sem isso o ALTER DEFAULT PRIVILEGES abaixo
+-- falha com "permission denied to change default privileges" (visto na Neon em 2026-11-03).
+grant redshield_migracao to current_user;
 alter default privileges for role redshield_migracao in schema public
   grant select, insert, update, delete on tables to redshield_app;
 alter default privileges for role redshield_migracao in schema public

@@ -7,9 +7,13 @@ O código está pronto para isto; o que falta são **contas e segredos**, que s�
 2. No SQL Editor, rodar `db/papeis.sql` trocando as senhas e o nome do banco. Anote as 3 URLs de conexão.
 
 ## 2. Aplicação (Railway)
-1. Novo projeto → *Deploy from GitHub repo*. O `railway.json` e o `Dockerfile` da raiz já definem build, migração (`preDeployCommand`) e *healthcheck* (`/saude`).
+1. Novo projeto → *Deploy from GitHub repo*. O build usa o `Dockerfile` da raiz.
+   - **A Railway ignora o `railway.json`** (o *config as code* foi descontinuado em favor de `.railway/railway.ts`; visto em 2026-11-03). Configure no serviço: *Pre-deploy command* `node dist/db/migrar.js`, *Healthcheck path* `/saude` (60 s), reinício *On failure*. Sem o pre-deploy, a API sobe sem tabelas (`relation "academia" does not exist`).
+   - **Região:** a Railway não tem região no Brasil. Usamos `us-east4` (Virgínia), a mais próxima do banco em São Paulo. A região padrão (Califórnia) dobra o atraso de cada consulta.
 2. Variáveis:
-   - `DATABASE_URL` = papel `redshield_app`; `MIGRATION_DATABASE_URL` = papel `redshield_migracao`
+   - `DATABASE_URL` = papel `redshield_app`, conexão **com pool** (host com `-pooler`)
+   - `MIGRATION_DATABASE_URL` = papel `redshield_migracao`, conexão **direta** (host sem `-pooler`): a migração usa `pg_advisory_lock`, que não funciona atrás do pool em modo transação
+   - As duas com `?sslmode=require`. O `BACKUP_DATABASE_URL` (passo 3) também usa a conexão direta.
    - `URL_PUBLICA` = endereço público (https)
    - `RESEND_API_KEY`, `EMAIL_REMETENTE` (domínio verificado no Resend)
    - `ROTINAS=1` em **uma** instância só; `HORA_DOS_AVISOS=8`

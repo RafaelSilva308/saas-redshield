@@ -1,6 +1,6 @@
 # CLAUDE.md — contexto do projeto para sessões futuras
 
-Sistema de gestão da academia **REDSHIELD** (jiu-jitsu). **Front (`app/`, React) ligado à API (`server/`, Fastify + PostgreSQL, 81 testes).** O protótipo com dados simulados ficou congelado na branch `prototipo`. Não há deploy feito (só `Dockerfile`/`railway.json`/CI/backup escritos, nunca executados); veja `PROGRESSO.md` e `DEPLOY.md`.
+Sistema de gestão da academia **REDSHIELD** (jiu-jitsu). **Front (`app/`, React) ligado à API (`server/`, Fastify + PostgreSQL, 81 testes).** O protótipo com dados simulados ficou congelado na branch `prototipo`. **No ar** na Railway (https://saas-redshield-production.up.railway.app) com banco na Neon, ainda **sem academia criada**; backup e e-mail pendentes. Quando o dono perguntar o que falta, use a seção "Deploy em andamento" do `PROGRESSO.md`. Veja também `DEPLOY.md`.
 Idioma do produto, dos documentos e dos commits: **português do Brasil**.
 
 ## Leia nesta ordem
